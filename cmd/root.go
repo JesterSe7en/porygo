@@ -2,6 +2,8 @@
 Copyright © 2025 Alexander Chan alyxchan87@gmail.com
 */
 
+// Package cmd defines the root command and wires together all
+// subcommands for the scrapgo CLI.
 package cmd
 
 import (

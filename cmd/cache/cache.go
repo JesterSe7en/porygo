@@ -4,6 +4,8 @@ Copyright © 2025 Alexander Chan alyxchan87@gmail.com
 This command will manage cache results
 */
 
+// Package cache provides the 'cache' command for inspecting,
+// clearing, or summarizing cached scraping results.
 package cache
 
 import (
@@ -13,47 +15,22 @@ import (
 )
 
 // cacheCmd represents the cache command
-
-func NewCommand() *cobra.Command {
-	return &cobra.Command{
-		Use:   "cache",
-		Short: "Manage cached scraping results",
-		Long: `Inspect, clear, or summarize previously scraped results stored in the local cache.
+var cacheCmd = &cobra.Command{
+	Use:   "cache",
+	Short: "Manage cached scraping results",
+	Long: `Inspect, clear, or summarize previously scraped results stored in the local cache.
 This helps avoid unnecessary network requests and enables quick access to past data.
 Subcommands include 'list' to view cache entries, 'clear' to remove entries, and 'stats' to view cache statistics.`,
-		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("cache called")
-		},
-	}
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("cache called")
+	},
 }
 
-//
-// var listCmd = &cobra.Command{
-// 	Use:   "list",
-// 	Short: "List out the cache",
-// 	Long:  `List out the cache long discription goes here`,
-// 	Run: func(cmd *cobra.Command, args []string) {
-// 		fmt.Println("You are asking to list the cache")
-// 	},
-// }
-//
-// var clearCmd = &cobra.Command{
-// 	Use:   "clear",
-// 	Short: "Clear all or by URL",
-// 	Long:  `Clear entire cache or by specific URL`,
-// 	Run: func(cmd *cobra.Command, args []string) {
-// 		fmt.Println("You are asking to list the cache")
-// 	},
-// }
-//
-// var statsCmd = &cobra.Command{
-// 	Use:   "stats",
-// 	Short: "Summary of cache (entries, last updated, etc.)",
-// 	Long:  `Show the entire summary of the cache`,
-// 	Run: func(cmd *cobra.Command, args []string) {
-// 		fmt.Println("You are asking to list the cache")
-// 	},
-// }
+// NewCommand returns the cache command for inspecting, clearing,
+// or summarizing cached scraping results.
+func NewCommand() *cobra.Command {
+	return cacheCmd
+}
 
 // func init() {
 // Here you will define your flags and configuration settings.

@@ -4,6 +4,8 @@ Copyright © 2025 Alexander Chan alyxchan87@gmail.com
 View and modify the CLI configuration
 */
 
+// Package config provides the 'config' command for viewing and
+// modifying the CLI configuration settings.
 package config
 
 import (
@@ -13,27 +15,31 @@ import (
 )
 
 // configCmd represents the config command
-func NewCommand() *cobra.Command {
-	return &cobra.Command{
-		Use:   "config",
-		Short: "View and modify CLI configuration",
-		Long: `View or update the scraper's configuration settings, such as default concurrency,
+var configCmd = &cobra.Command{
+	Use:   "config",
+	Short: "View and modify CLI configuration",
+	Long: `View or update the scraper's configuration settings, such as default concurrency,
 rate limits, output paths, or user-agent strings.
 Supports a config file (YAML) to persist settings across sessions.`,
-		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("config called")
-		},
-	}
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("config called")
+	},
 }
 
-// func init() {
-// 	// Here you will define your flags and configuration settings.
+// NewCommand returns the config command for viewing and modifying
+// the CLI configuration.
+func NewCommand() *cobra.Command {
+	return configCmd
+}
 
-// Cobra supports Persistent Flags which will work for this command
-// and all subcommands, e.g.:
-// configCmd.PersistentFlags().String("foo", "", "A help for foo")
+func init() {
+	// Here you will define your flags and configuration settings.
 
-// Cobra supports local flags which will only run when this command
-// is called directly, e.g.:
-// configCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-// }
+	// Cobra supports Persistent Flags which will work for this command
+	// and all subcommands, e.g.:
+	// configCmd.PersistentFlags().String("foo", "", "A help for foo")
+
+	// Cobra supports local flags which will only run when this command
+	// is called directly, e.g.:
+	// configCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}
