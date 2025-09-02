@@ -1,7 +1,7 @@
 /*
-Copyright © 2025 NAME HERE <EMAIL ADDRESS>
-
+Copyright © 2025 Alexander Chan alyxchan87@gmail.com
 */
+
 package main
 
 import "github.com/JesterSe7en/scrapgo/cmd"
