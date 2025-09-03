@@ -27,10 +27,7 @@ var rootCmd = &cobra.Command{
 Supports rate limiting, retries, and caching of results to avoid redundant requests.
 Output can be saved in JSON or CSV format, and verbose logging is available for progress tracking.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		err := getArgs(cmd)
-		if err != nil {
-			return err
-		}
+		fmt.Printf("Config: %+v\n", cfg)
 		return nil
 	},
 }
@@ -63,24 +60,12 @@ func init() {
 	// 	•	--rate, -R → requests per second (default 1)
 	// 	•	--force, -f → ignore cache and scrape fresh
 	//
-	rootCmd.Flags().StringP("input", "i", "", "path to file with URLs")
-	rootCmd.Flags().IntP("concurrency", "c", 5, "number of workers")
-	rootCmd.Flags().DurationP("timeout", "t", 10*time.Second, "requirest timeout per URL")
-	rootCmd.Flags().StringP("output", "o", "JSON", "JSON or CSV")
-	rootCmd.Flags().BoolP("verbose", "v", false, "shows logs for each step")
-	rootCmd.Flags().IntP("retry", "r", 3, "number of retries per URL on failure")
-	rootCmd.Flags().IntP("rate", "R", 1, "requests per second (default 1)")
-	rootCmd.Flags().BoolP("force", "f", false, "ignore cache and scrape fresh data")
-}
-
-func getArgs(cmd *cobra.Command) error {
-	var err error
-	var input string
-	input, err = cmd.Flags().GetString("input")
-	if err != nil {
-		return err
-	}
-
-	fmt.Println("input = ", input)
-	return nil
+	rootCmd.Flags().StringVarP(&cfg.Input, "input", "i", "", "path to file with URLs")
+	rootCmd.Flags().IntVarP(&cfg.Concurrency, "concurrency", "c", 5, "number of workers")
+	rootCmd.Flags().DurationVarP(&cfg.Timeout, "timeout", "t", 10*time.Second, "requirest timeout per URL")
+	rootCmd.Flags().StringVarP(&cfg.Output, "output", "o", "JSON", "JSON or CSV")
+	rootCmd.Flags().BoolVarP(&cfg.Verbose, "verbose", "v", false, "shows logs for each step")
+	rootCmd.Flags().IntVarP(&cfg.Retry, "retry", "r", 3, "number of retries per URL on failure")
+	rootCmd.Flags().IntVarP(&cfg.Rate, "rate", "R", 1, "requests per second (default 1)")
+	rootCmd.Flags().BoolVarP(&cfg.Force, "force", "f", false, "ignore cache and scrape fresh data")
 }
