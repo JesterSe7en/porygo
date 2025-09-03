@@ -7,12 +7,17 @@ Copyright © 2025 Alexander Chan alyxchan87@gmail.com
 package cmd
 
 import (
+	"fmt"
 	"os"
+	"time"
 
-	"github.com/JesterSe7en/scrapgo/cmd/cache"
-	"github.com/JesterSe7en/scrapgo/cmd/config"
+	cacheCmd "github.com/JesterSe7en/scrapgo/cmd/cache"
+	configCmd "github.com/JesterSe7en/scrapgo/cmd/config"
+	"github.com/JesterSe7en/scrapgo/config"
 	"github.com/spf13/cobra"
 )
+
+var cfg config.Config
 
 // RootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -21,11 +26,13 @@ var rootCmd = &cobra.Command{
 	Long: `Scrape web pages or APIs from a list of URLs, using a concurrent worker pool.
 Supports rate limiting, retries, and caching of results to avoid redundant requests.
 Output can be saved in JSON or CSV format, and verbose logging is available for progress tracking.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	// Run: func(cmd *cobra.Command, args []string) {
-	// 	fmt.Println("Hello from root command")
-	// },
+	RunE: func(cmd *cobra.Command, args []string) error {
+		err := getArgs(cmd)
+		if err != nil {
+			return err
+		}
+		return nil
+	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -38,15 +45,42 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.AddCommand(cache.NewCommand())
-	rootCmd.AddCommand(config.NewCommand())
+	rootCmd.AddCommand(cacheCmd.NewCommand())
+	rootCmd.AddCommand(configCmd.NewCommand())
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
 	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.scrapgo.yaml)")
+	// flags
+	//
+	// --input, -i → path to file with URLs
+	// 	•	--concurrency, -c → number of workers (default 5)
+	// 	•	--timeout, -t → request timeout per URL (default 10s)
+	// 	•	--output, -o → JSON or CSV (default JSON)
+	// 	•	--verbose, -v → show logs for each step
+	// 	•	--retry, -r → number of retries on failure (default 3)
+	// 	•	--rate, -R → requests per second (default 1)
+	// 	•	--force, -f → ignore cache and scrape fresh
+	//
+	rootCmd.Flags().StringP("input", "i", "", "path to file with URLs")
+	rootCmd.Flags().IntP("concurrency", "c", 5, "number of workers")
+	rootCmd.Flags().DurationP("timeout", "t", 10*time.Second, "requirest timeout per URL")
+	rootCmd.Flags().StringP("output", "o", "JSON", "JSON or CSV")
+	rootCmd.Flags().BoolP("verbose", "v", false, "shows logs for each step")
+	rootCmd.Flags().IntP("retry", "r", 3, "number of retries per URL on failure")
+	rootCmd.Flags().IntP("rate", "R", 1, "requests per second (default 1)")
+	rootCmd.Flags().BoolP("force", "f", false, "ignore cache and scrape fresh data")
+}
 
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+func getArgs(cmd *cobra.Command) error {
+	var err error
+	var input string
+	input, err = cmd.Flags().GetString("input")
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("input = ", input)
+	return nil
 }
