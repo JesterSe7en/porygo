@@ -24,4 +24,7 @@ go.work.sum
 *.swp
 *.swo
 *.DS_Store
+
+# Project specifics
 scrapgo
+config.toml
