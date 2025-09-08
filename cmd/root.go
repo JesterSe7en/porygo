@@ -13,6 +13,7 @@ import (
 	cacheCmd "github.com/JesterSe7en/scrapgo/cmd/cache"
 	configCmd "github.com/JesterSe7en/scrapgo/cmd/config"
 	"github.com/JesterSe7en/scrapgo/config"
+	l "github.com/JesterSe7en/scrapgo/internal/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -49,6 +50,8 @@ Output can be saved in JSON or CSV format, and verbose logging is available for 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
+	sugar := l.Logger.Sugar()
+	sugar.Infof("Executing root command....: %s", "hi!")
 	err := rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
@@ -57,6 +60,9 @@ func Execute() {
 
 // mergeCLIFlags merges CLI flag values into the configuration
 func mergeCLIFlags(cmd *cobra.Command, cfg config.Config) config.Config {
+	if cmd.PersistentFlags().Changed("verbose") {
+		cfg.Verbose, _ = cmd.Flags().GetBool("verbose")
+	}
 	if cmd.Flags().Changed("input") {
 		cfg.Input, _ = cmd.Flags().GetString("input")
 	}
@@ -68,9 +74,6 @@ func mergeCLIFlags(cmd *cobra.Command, cfg config.Config) config.Config {
 	}
 	if cmd.Flags().Changed("output") {
 		cfg.Output, _ = cmd.Flags().GetString("output")
-	}
-	if cmd.Flags().Changed("verbose") {
-		cfg.Verbose, _ = cmd.Flags().GetBool("verbose")
 	}
 	if cmd.Flags().Changed("retry") {
 		cfg.Retry, _ = cmd.Flags().GetInt("retry")
@@ -92,11 +95,11 @@ func init() {
 	defaults := config.Defaults()
 
 	// Define flags with default values
+	rootCmd.PersistentFlags().BoolP("verbose", "v", defaults.Verbose, "show logs for each step")
 	rootCmd.Flags().StringP("input", "i", defaults.Input, "path to file with URLs")
 	rootCmd.Flags().IntP("concurrency", "c", defaults.Concurrency, "number of workers")
 	rootCmd.Flags().DurationP("timeout", "t", defaults.Timeout, "request timeout per URL")
 	rootCmd.Flags().StringP("output", "o", defaults.Output, "JSON or CSV")
-	rootCmd.Flags().BoolP("verbose", "v", defaults.Verbose, "show logs for each step")
 	rootCmd.Flags().IntP("retry", "r", defaults.Retry, "number of retries per URL on failure")
 	rootCmd.Flags().IntP("rate", "R", defaults.Rate, "requests per second")
 	rootCmd.Flags().BoolP("force", "f", defaults.Force, "ignore cache and scrape fresh data")
