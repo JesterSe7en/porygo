@@ -1,3 +1,5 @@
+// Package flags defines string constants for command-line flag names used throughout
+// the application.
 package flags
 
 const (
