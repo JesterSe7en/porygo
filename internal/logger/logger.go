@@ -1,3 +1,5 @@
+// Package logger provides logging functionality for the scrapego tool. It wraps zap logger
+// to provide a simple interface for structured logging.
 package logger
 
 import (
@@ -8,6 +10,8 @@ var logger *zap.Logger
 
 func InitLogger() {
 	cfg := zap.NewDevelopmentConfig()
+	cfg.OutputPaths = []string{"scrapego.log"}
+	cfg.ErrorOutputPaths = []string{"scrapego.log"}
 
 	var err error
 	logger, err = cfg.Build()
