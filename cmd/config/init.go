@@ -28,7 +28,7 @@ Example:
 		fmt.Println("Initializing config.toml with default values...")
 
 		force, _ := cmd.Flags().GetBool("force")
-		manager := config.DefaultConfigManager()
+		manager := config.DefaultManager()
 
 		err := manager.InitDefaultsWithForce(force)
 		if err != nil {

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
+	l "github.com/JesterSe7en/scrapgo/internal/logger"
 )
 
 // Config holds all configuration options for the scrapego tool
@@ -24,21 +25,21 @@ type Config struct {
 	Force       bool          `toml:"force"`
 }
 
-// ConfigManager handles configuration loading, merging, and saving
-type ConfigManager struct {
+// Manager handles configuration loading, merging, and saving
+type Manager struct {
 	configPath string
 }
 
-// NewConfigManager creates a new configuration manager
-func NewConfigManager(configPath string) *ConfigManager {
-	return &ConfigManager{
+// NewManager creates a new configuration manager
+func NewManager(configPath string) *Manager {
+	return &Manager{
 		configPath: configPath,
 	}
 }
 
-// DefaultConfigManager creates a configuration manager with the default config path
-func DefaultConfigManager() *ConfigManager {
-	return NewConfigManager("config.toml")
+// DefaultManager creates a configuration manager with the default config path
+func DefaultManager() *Manager {
+	return NewManager("config.toml")
 }
 
 // Defaults returns a Config struct with default values
@@ -60,12 +61,14 @@ func Defaults() Config {
 // 2. Config file (if exists)
 // 3. Environment variables (TODO)
 // 4. CLI flags (handled by caller)
-func (m *ConfigManager) Load() (Config, error) {
+func (m *Manager) Load() (Config, error) {
 	// Start with defaults
 	cfg := Defaults()
 
 	// Try to load from file if it exists
+	l.Debug("Attempting to load config file, uses default if none found...")
 	if _, err := os.Stat(m.configPath); err == nil {
+		l.Debug("Found config file")
 		fileCfg, err := m.loadFromFile()
 		if err != nil {
 			return cfg, fmt.Errorf("failed to load config file: %w", err)
@@ -77,7 +80,7 @@ func (m *ConfigManager) Load() (Config, error) {
 }
 
 // loadFromFile loads configuration from a TOML file
-func (m *ConfigManager) loadFromFile() (Config, error) {
+func (m *Manager) loadFromFile() (Config, error) {
 	var cfg Config
 
 	data, err := os.ReadFile(m.configPath)
@@ -94,7 +97,7 @@ func (m *ConfigManager) loadFromFile() (Config, error) {
 }
 
 // mergeConfigs merges two config structs, with the second taking precedence
-func (m *ConfigManager) mergeConfigs(base, override Config) Config {
+func (m *Manager) mergeConfigs(base, override Config) Config {
 	result := base
 
 	// Only override non-zero values
@@ -125,13 +128,13 @@ func (m *ConfigManager) mergeConfigs(base, override Config) Config {
 }
 
 // Save writes the configuration to a TOML file
-func (m *ConfigManager) Save(cfg Config) error {
+func (m *Manager) Save(cfg Config) error {
 	return m.SaveWithForce(cfg, false)
 }
 
 // SaveWithForce writes the configuration to a TOML file
 // If force is true, it will overwrite an existing config file
-func (m *ConfigManager) SaveWithForce(cfg Config, force bool) error {
+func (m *Manager) SaveWithForce(cfg Config, force bool) error {
 	// Check if config file already exists
 	if !force {
 		if _, err := os.Stat(m.configPath); err == nil {
@@ -160,19 +163,19 @@ func (m *ConfigManager) SaveWithForce(cfg Config, force bool) error {
 }
 
 // InitDefaults creates a config file with default values
-func (m *ConfigManager) InitDefaults() error {
+func (m *Manager) InitDefaults() error {
 	return m.InitDefaultsWithForce(false)
 }
 
 // InitDefaultsWithForce creates a config file with default values
 // If force is true, it will overwrite an existing config file
-func (m *ConfigManager) InitDefaultsWithForce(force bool) error {
+func (m *Manager) InitDefaultsWithForce(force bool) error {
 	defaults := Defaults()
 	return m.SaveWithForce(defaults, force)
 }
 
 // encode converts the config into a TOML buffer
-func (m *ConfigManager) encode(cfg Config) (bytes.Buffer, error) {
+func (m *Manager) encode(cfg Config) (bytes.Buffer, error) {
 	var buffer bytes.Buffer
 
 	err := toml.NewEncoder(&buffer).Encode(cfg)
@@ -261,6 +264,6 @@ func InitConfigFile() error {
 // InitConfigFileWithForce creates config with defaults and force option
 // Deprecated: Use Manager.InitDefaultsWithForce() instead
 func InitConfigFileWithForce(force bool) error {
-	manager := DefaultConfigManager()
+	manager := DefaultManager()
 	return manager.InitDefaultsWithForce(force)
 }
