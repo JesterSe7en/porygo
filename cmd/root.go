@@ -14,6 +14,7 @@ import (
 	configCmd "github.com/JesterSe7en/scrapgo/cmd/config"
 	"github.com/JesterSe7en/scrapgo/config"
 	l "github.com/JesterSe7en/scrapgo/internal/logger"
+	s "github.com/JesterSe7en/scrapgo/internal/scraper"
 	"github.com/spf13/cobra"
 )
 
@@ -40,8 +41,13 @@ Output can be saved in JSON or CSV format, and verbose logging is available for 
 			return fmt.Errorf("invalid configuration: %w", err)
 		}
 
-		// TODO: Implement actual scraping logic here
-		fmt.Printf("Would scrape with config: %+v\n", cfg)
+		l.Info("Scraping with config : %+v\n", cfg)
+		contentType, err := s.Scrape("http://www.google.com")
+		if err != nil {
+			return fmt.Errorf("could not scrap data from %s", "http://www.google.com")
+		}
+
+		l.Info("Found content type of %s to be %s", "http://www.google.com", contentType)
 
 		return nil
 	},
