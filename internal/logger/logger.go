@@ -20,18 +20,18 @@ func InitLogger() {
 	}
 }
 
-func Info(msg string, fields ...any) {
-	logger.Sugar().Infow(msg, fields...)
+func Info(msg string, args ...any) {
+	logger.Sugar().Infof(msg, args...)
 }
 
-func Warn(msg string, fields ...any) {
-	logger.Sugar().Warnw(msg, fields...)
+func Warn(msg string, args ...any) {
+	logger.Sugar().Warnf(msg, args...)
 }
 
-func Error(msg string, fields ...any) {
-	logger.Sugar().Errorw(msg, fields...)
+func Error(msg string, args ...any) {
+	logger.Sugar().Errorf(msg, args...)
 }
 
-func Debug(msg string, fields ...any) {
-	logger.Sugar().Debugw(msg, fields...)
+func Debug(msg string, args ...any) {
+	logger.Sugar().Debugf(msg, args...)
 }
