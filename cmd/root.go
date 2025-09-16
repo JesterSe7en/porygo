@@ -13,6 +13,7 @@ import (
 	cacheCmd "github.com/JesterSe7en/scrapego/cmd/cache"
 	configCmd "github.com/JesterSe7en/scrapego/cmd/config"
 	"github.com/JesterSe7en/scrapego/config"
+	c "github.com/JesterSe7en/scrapego/config"
 	f "github.com/JesterSe7en/scrapego/internal/flags"
 	l "github.com/JesterSe7en/scrapego/internal/logger"
 	s "github.com/JesterSe7en/scrapego/internal/scraper"
@@ -29,7 +30,7 @@ Supports rate limiting, retries, and caching of results to avoid redundant reque
 Output can be saved in JSON or CSV format, and verbose logging is available for progress tracking.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Load configuration with proper precedence
-		manager := config.DefaultManager()
+		manager := c.DefaultManager()
 		cfg, err := manager.Load()
 		if err != nil {
 			return fmt.Errorf("failed to load configuration: %s", err.Error())
@@ -83,7 +84,7 @@ func Execute() {
 }
 
 // mergeCLIFlags merges CLI flag values into the configuration
-func mergeCLIFlags(cmd *cobra.Command, cfg config.Config) config.Config {
+func mergeCLIFlags(cmd *cobra.Command, cfg c.Config) c.Config {
 	if cmd.PersistentFlags().Changed(f.FlagVerbose) {
 		cfg.Verbose, _ = cmd.Flags().GetBool(f.FlagVerbose)
 	}
