@@ -9,12 +9,14 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"time"
 
 	cacheCmd "github.com/JesterSe7en/scrapgo/cmd/cache"
 	configCmd "github.com/JesterSe7en/scrapgo/cmd/config"
 	"github.com/JesterSe7en/scrapgo/config"
 	l "github.com/JesterSe7en/scrapgo/internal/logger"
 	s "github.com/JesterSe7en/scrapgo/internal/scraper"
+	wp "github.com/JesterSe7en/scrapgo/internal/workerpool"
 	"github.com/spf13/cobra"
 )
 
@@ -41,14 +43,29 @@ Output can be saved in JSON or CSV format, and verbose logging is available for 
 			return fmt.Errorf("invalid configuration: %w", err)
 		}
 
-		l.Info("Scraping with config : %+v\n", cfg)
-		contentType, err := s.Scrape("http://www.google.com")
-		if err != nil {
-			return fmt.Errorf("could not scrap data from %s", "http://www.google.com")
+		l.Info("Scraping with config : %+v", cfg)
+		// For now, keep the buffer size same as worker count
+		// TODO: evaluate if making the buffer 2x or 3x is worth it
+		pool := wp.New(cfg.Concurrency, cfg.Concurrency)
+		pool.Run(cfg.Concurrency)
+
+		pool.Submit(func() wp.Result {
+			url := "http://www.google.com"
+			l.Info("attempting to scrape: #w", url)
+			return s.ScrapeWithTimeout(url, 30*time.Second)
+		})
+
+		pool.Close()
+
+		for res := range pool.Results() {
+			if res.Err != nil {
+				l.Error("failed to get response: %w", err)
+				continue
+			}
+
+			l.Info("found something: %w", res.Value)
+
 		}
-
-		l.Info("Found content type of %s to be %s", "http://www.google.com", contentType)
-
 		return nil
 	},
 }

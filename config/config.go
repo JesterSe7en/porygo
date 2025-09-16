@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
-	l "github.com/JesterSe7en/scrapgo/internal/logger"
+	l "github.com/JesterSe7en/scrapego/internal/logger"
 )
 
 // Config holds all configuration options for the scrapego tool
@@ -144,7 +144,7 @@ func (m *Manager) SaveWithForce(cfg Config, force bool) error {
 
 	// Ensure the directory exists
 	if dir := filepath.Dir(m.configPath); dir != "." {
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return fmt.Errorf("failed to create config directory: %w", err)
 		}
 	}
@@ -154,7 +154,7 @@ func (m *Manager) SaveWithForce(cfg Config, force bool) error {
 		return fmt.Errorf("failed to encode config: %w", err)
 	}
 
-	err = os.WriteFile(m.configPath, buffer.Bytes(), 0644)
+	err = os.WriteFile(m.configPath, buffer.Bytes(), 0o644)
 	if err != nil {
 		return fmt.Errorf("failed to write config file: %w", err)
 	}
@@ -252,7 +252,7 @@ func Encode(cfg *Config) (bytes.Buffer, error) {
 // WriteToToml writes config buffer to file
 // Deprecated: Use Manager.Save() instead
 func WriteToToml(buffer bytes.Buffer) error {
-	return os.WriteFile("config.toml", buffer.Bytes(), 0644)
+	return os.WriteFile("config.toml", buffer.Bytes(), 0o644)
 }
 
 // InitConfigFile creates config with defaults

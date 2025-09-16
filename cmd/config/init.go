@@ -7,7 +7,7 @@ package config
 import (
 	"fmt"
 
-	"github.com/JesterSe7en/scrapgo/config"
+	"github.com/JesterSe7en/scrapego/config"
 	"github.com/spf13/cobra"
 )
 

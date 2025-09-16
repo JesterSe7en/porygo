@@ -1,4 +1,4 @@
-module github.com/JesterSe7en/scrapgo
+module github.com/JesterSe7en/scrapego
 
 go 1.25.0
 
