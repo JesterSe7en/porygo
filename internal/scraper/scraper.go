@@ -4,14 +4,20 @@ package scraper
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
 	wp "github.com/JesterSe7en/scrapego/internal/workerpool"
 )
 
+// TODO: Look into goquery library to parse html better
+
+var client = &http.Client{}
+
 func ScrapeWithTimeout(url string, timeout time.Duration) wp.Result {
+	// cancel here allows us to gracefully clean up and stop the request if in the event
+	// the user force quits e.g. ctrl-c
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
@@ -23,8 +29,8 @@ func ScrapeWithTimeout(url string, timeout time.Duration) wp.Result {
 		}
 	}
 
-	// Create a client
-	client := &http.Client{}
+	// Set the User-Agent header to mimic a browser request
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3")
 
 	// Execute the request
 	res, err := client.Do(req)
@@ -33,8 +39,8 @@ func ScrapeWithTimeout(url string, timeout time.Duration) wp.Result {
 	}
 	defer res.Body.Close()
 
-	if res.StatusCode != 200 {
-		return wp.Result{Value: nil, Err: errors.New("did not recieve status code 200")}
+	if res.StatusCode < 200 || res.StatusCode >= 300 {
+		return wp.Result{Value: nil, Err: fmt.Errorf("request failed with status code: %d", res.StatusCode)}
 	}
 
 	// Extract content type
