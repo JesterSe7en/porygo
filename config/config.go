@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
-	l "github.com/JesterSe7en/scrapego/internal/logger"
+	"github.com/JesterSe7en/scrapego/internal/logger"
 )
 
 // Config holds all configuration options for the scrapego tool
@@ -66,9 +66,9 @@ func (m *Manager) Load() (Config, error) {
 	cfg := Defaults()
 
 	// Try to load from file if it exists
-	l.Debug("Attempting to load config file, uses default if none found...")
+	logger.Debug("Attempting to load config file, uses default if none found...")
 	if _, err := os.Stat(m.configPath); err == nil {
-		l.Debug("Found config file")
+		logger.Debug("Found config file")
 		fileCfg, err := m.loadFromFile()
 		if err != nil {
 			return cfg, fmt.Errorf("failed to load config file: %s", err.Error())
