@@ -12,7 +12,6 @@ import (
 
 	cacheCmd "github.com/JesterSe7en/scrapego/cmd/cache"
 	configCmd "github.com/JesterSe7en/scrapego/cmd/config"
-	"github.com/JesterSe7en/scrapego/config"
 	c "github.com/JesterSe7en/scrapego/config"
 	f "github.com/JesterSe7en/scrapego/internal/flags"
 	l "github.com/JesterSe7en/scrapego/internal/logger"
@@ -117,7 +116,7 @@ func init() {
 	rootCmd.AddCommand(configCmd.NewCommand())
 
 	// Get default values for flag defaults
-	defaults := config.Defaults()
+	defaults := c.Defaults()
 
 	// Define flags with default values
 	rootCmd.PersistentFlags().BoolP(f.FlagVerbose, "v", defaults.Verbose, "show logs for each step")
