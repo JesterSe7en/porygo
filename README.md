@@ -1,6 +1,6 @@
-# Scrapgo – Concurrent Web Scraper CLI
+# Scrapego – Concurrent Web Scraper CLI
 
-Scrapgo is a command-line tool written in Go that demonstrates how to scrape data from web pages concurrently using goroutines and channels.
+Scrapego is a command-line tool written in Go that demonstrates how to scrape data from web pages concurrently using goroutines and channels.
 
 For demonstration purposes, the scraper currently fetches the **page title** (`<title>` tag) from each URL provided.
 
@@ -11,12 +11,13 @@ For demonstration purposes, the scraper currently fetches the **page title** (`<
 1. **Input**
    - You pass one or more URLs to the CLI.
    - Example:
+
      ```bash
      scrapgo https://example.com https://golang.org
      ```
 
 2. **Concurrency**
-   - Scrapgo uses a worker pool pattern with goroutines.
+   - Scrapego uses a worker pool pattern with goroutines.
    - Multiple URLs are scraped in parallel, making the process much faster than sequential scraping.
 
 3. **Scraping Logic**
@@ -26,6 +27,7 @@ For demonstration purposes, the scraper currently fetches the **page title** (`<
      - The `<title>` element is extracted.
 
    Example snippet:
+
    ```go
    resp, err := http.Get(url)
    if err != nil {
@@ -44,6 +46,7 @@ For demonstration purposes, the scraper currently fetches the **page title** (`<
 4. **Output**
    - Results are printed to the console or written to a file (JSON/CSV support can be added).
    - Example output:
+
      ```text
      https://example.com -> Example Domain
      https://golang.org  -> The Go Programming Language
@@ -54,10 +57,11 @@ For demonstration purposes, the scraper currently fetches the **page title** (`<
 ## Example Command
 
 ```bash
-scrapgo https://example.com https://golang.org
+scrapego https://example.com https://golang.org
 ```
 
 Output:
+
 ```text
 Scraping 2 URLs with 5 workers...
 https://example.com -> Example Domain
