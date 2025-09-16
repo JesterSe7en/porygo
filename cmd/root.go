@@ -9,11 +9,11 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"time"
 
 	cacheCmd "github.com/JesterSe7en/scrapego/cmd/cache"
 	configCmd "github.com/JesterSe7en/scrapego/cmd/config"
 	"github.com/JesterSe7en/scrapego/config"
+	"github.com/JesterSe7en/scrapego/internal/flags"
 	l "github.com/JesterSe7en/scrapego/internal/logger"
 	s "github.com/JesterSe7en/scrapego/internal/scraper"
 	wp "github.com/JesterSe7en/scrapego/internal/workerpool"
@@ -44,15 +44,17 @@ Output can be saved in JSON or CSV format, and verbose logging is available for 
 		}
 
 		l.Info("Scraping with config : %+v", cfg)
+
 		// For now, keep the buffer size same as worker count
 		// TODO: evaluate if making the buffer 2x or 3x is worth it
+
 		pool := wp.New(cfg.Concurrency, cfg.Concurrency)
 		pool.Run(cfg.Concurrency)
 
 		pool.Submit(func() wp.Result {
 			url := "http://www.google.com"
 			l.Info("attempting to scrape: %s", url)
-			return s.ScrapeWithTimeout(url, 30*time.Second)
+			return s.ScrapeWithRetry(url, cfg.Timeout, cfg.Retry, cfg.Backoff)
 		})
 
 		pool.Close()

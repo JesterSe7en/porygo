@@ -15,7 +15,28 @@ import (
 
 var client = &http.Client{}
 
-func ScrapeWithTimeout(url string, timeout time.Duration) wp.Result {
+func ScrapeWithRetry(url string, timeout time.Duration, retries int, backoff time.Duration) wp.Result {
+	var lastErr error
+
+	for attempt := 0; attempt <= retries; attempt++ {
+		result := scrape(url, timeout)
+		if result.Err == nil {
+			return result
+		}
+		lastErr = result.Err
+
+		if attempt < retries {
+			time.Sleep(backoff)
+		}
+	}
+
+	return wp.Result{
+		Value: nil,
+		Err:   fmt.Errorf("all attempts failed: %s", lastErr.Error()),
+	}
+}
+
+func scrape(url string, timeout time.Duration) wp.Result {
 	// cancel here allows us to gracefully clean up and stop the request if in the event
 	// the user force quits e.g. ctrl-c
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
