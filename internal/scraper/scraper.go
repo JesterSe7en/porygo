@@ -60,6 +60,7 @@ func scrape(url string, timeout time.Duration) wp.Result {
 	}
 	defer res.Body.Close()
 
+	// Reference: https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status#server_error_responses
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
 		return wp.Result{Value: nil, Err: fmt.Errorf("request failed with status code: %d", res.StatusCode)}
 	}
