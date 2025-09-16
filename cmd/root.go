@@ -13,7 +13,6 @@ import (
 	cacheCmd "github.com/JesterSe7en/scrapego/cmd/cache"
 	configCmd "github.com/JesterSe7en/scrapego/cmd/config"
 	"github.com/JesterSe7en/scrapego/config"
-	"github.com/JesterSe7en/scrapego/internal/flags"
 	f "github.com/JesterSe7en/scrapego/internal/flags"
 	l "github.com/JesterSe7en/scrapego/internal/logger"
 	s "github.com/JesterSe7en/scrapego/internal/scraper"
@@ -104,7 +103,7 @@ func mergeCLIFlags(cmd *cobra.Command, cfg config.Config) config.Config {
 		cfg.Retry, _ = cmd.Flags().GetInt(f.FlagRetry)
 	}
 	if cmd.Flags().Changed(f.FlagBackoff) {
-		cfg.Backoff, _ = cmd.Flags().GetDuration(flags.FlagBackoff)
+		cfg.Backoff, _ = cmd.Flags().GetDuration(f.FlagBackoff)
 	}
 	if cmd.Flags().Changed(f.FlagForce) {
 		cfg.Force, _ = cmd.Flags().GetBool(f.FlagForce)
@@ -126,6 +125,6 @@ func init() {
 	rootCmd.Flags().DurationP(f.FlagTimeout, "t", defaults.Timeout, "request timeout per URL")
 	rootCmd.Flags().StringP(f.FlagOutput, "o", defaults.Output, "JSON or CSV")
 	rootCmd.Flags().IntP(f.FlagRetry, "r", defaults.Retry, "number of retries per URL on failure")
-	rootCmd.Flags().IntP(flags.FlagBackoff, "b", int(defaults.Backoff), "backoff time between retries")
+	rootCmd.Flags().IntP(f.FlagBackoff, "b", int(defaults.Backoff), "backoff time between retries")
 	rootCmd.Flags().BoolP(f.FlagForce, "f", defaults.Force, "ignore cache and scrape fresh data")
 }
