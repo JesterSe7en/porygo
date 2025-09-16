@@ -11,12 +11,12 @@ import (
 	"os"
 	"time"
 
-	cacheCmd "github.com/JesterSe7en/scrapgo/cmd/cache"
-	configCmd "github.com/JesterSe7en/scrapgo/cmd/config"
-	"github.com/JesterSe7en/scrapgo/config"
-	l "github.com/JesterSe7en/scrapgo/internal/logger"
-	s "github.com/JesterSe7en/scrapgo/internal/scraper"
-	wp "github.com/JesterSe7en/scrapgo/internal/workerpool"
+	cacheCmd "github.com/JesterSe7en/scrapego/cmd/cache"
+	configCmd "github.com/JesterSe7en/scrapego/cmd/config"
+	"github.com/JesterSe7en/scrapego/config"
+	l "github.com/JesterSe7en/scrapego/internal/logger"
+	s "github.com/JesterSe7en/scrapego/internal/scraper"
+	wp "github.com/JesterSe7en/scrapego/internal/workerpool"
 	"github.com/spf13/cobra"
 )
 
