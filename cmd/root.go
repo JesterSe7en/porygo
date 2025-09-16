@@ -14,6 +14,7 @@ import (
 	configCmd "github.com/JesterSe7en/scrapego/cmd/config"
 	"github.com/JesterSe7en/scrapego/config"
 	"github.com/JesterSe7en/scrapego/internal/flags"
+	f "github.com/JesterSe7en/scrapego/internal/flags"
 	l "github.com/JesterSe7en/scrapego/internal/logger"
 	s "github.com/JesterSe7en/scrapego/internal/scraper"
 	wp "github.com/JesterSe7en/scrapego/internal/workerpool"
@@ -84,29 +85,29 @@ func Execute() {
 
 // mergeCLIFlags merges CLI flag values into the configuration
 func mergeCLIFlags(cmd *cobra.Command, cfg config.Config) config.Config {
-	if cmd.PersistentFlags().Changed("verbose") {
-		cfg.Verbose, _ = cmd.Flags().GetBool("verbose")
+	if cmd.PersistentFlags().Changed(f.FlagVerbose) {
+		cfg.Verbose, _ = cmd.Flags().GetBool(f.FlagVerbose)
 	}
-	if cmd.Flags().Changed("input") {
-		cfg.Input, _ = cmd.Flags().GetString("input")
+	if cmd.Flags().Changed(f.FlagInput) {
+		cfg.Input, _ = cmd.Flags().GetString(f.FlagInput)
 	}
-	if cmd.Flags().Changed("concurrency") {
-		cfg.Concurrency, _ = cmd.Flags().GetInt("concurrency")
+	if cmd.Flags().Changed(f.FlagConcurrency) {
+		cfg.Concurrency, _ = cmd.Flags().GetInt(f.FlagConcurrency)
 	}
-	if cmd.Flags().Changed("timeout") {
-		cfg.Timeout, _ = cmd.Flags().GetDuration("timeout")
+	if cmd.Flags().Changed(f.FlagTimeout) {
+		cfg.Timeout, _ = cmd.Flags().GetDuration(f.FlagTimeout)
 	}
-	if cmd.Flags().Changed("output") {
-		cfg.Output, _ = cmd.Flags().GetString("output")
+	if cmd.Flags().Changed(f.FlagOutput) {
+		cfg.Output, _ = cmd.Flags().GetString(f.FlagOutput)
 	}
-	if cmd.Flags().Changed("retry") {
-		cfg.Retry, _ = cmd.Flags().GetInt("retry")
+	if cmd.Flags().Changed(f.FlagRetry) {
+		cfg.Retry, _ = cmd.Flags().GetInt(f.FlagRetry)
 	}
-	if cmd.Flags().Changed("rate") {
+	if cmd.Flags().Changed(f.FlagBackoff) {
 		cfg.Backoff, _ = cmd.Flags().GetDuration(flags.FlagBackoff)
 	}
-	if cmd.Flags().Changed("force") {
-		cfg.Force, _ = cmd.Flags().GetBool("force")
+	if cmd.Flags().Changed(f.FlagForce) {
+		cfg.Force, _ = cmd.Flags().GetBool(f.FlagForce)
 	}
 	return cfg
 }
@@ -119,12 +120,12 @@ func init() {
 	defaults := config.Defaults()
 
 	// Define flags with default values
-	rootCmd.PersistentFlags().BoolP("verbose", "v", defaults.Verbose, "show logs for each step")
-	rootCmd.Flags().StringP("input", "i", defaults.Input, "path to file with URLs")
-	rootCmd.Flags().IntP("concurrency", "c", defaults.Concurrency, "number of workers")
-	rootCmd.Flags().DurationP("timeout", "t", defaults.Timeout, "request timeout per URL")
-	rootCmd.Flags().StringP("output", "o", defaults.Output, "JSON or CSV")
-	rootCmd.Flags().IntP("retry", "r", defaults.Retry, "number of retries per URL on failure")
+	rootCmd.PersistentFlags().BoolP(f.FlagVerbose, "v", defaults.Verbose, "show logs for each step")
+	rootCmd.Flags().StringP(f.FlagInput, "i", defaults.Input, "path to file with URLs")
+	rootCmd.Flags().IntP(f.FlagConcurrency, "c", defaults.Concurrency, "number of workers")
+	rootCmd.Flags().DurationP(f.FlagTimeout, "t", defaults.Timeout, "request timeout per URL")
+	rootCmd.Flags().StringP(f.FlagOutput, "o", defaults.Output, "JSON or CSV")
+	rootCmd.Flags().IntP(f.FlagRetry, "r", defaults.Retry, "number of retries per URL on failure")
 	rootCmd.Flags().IntP(flags.FlagBackoff, "b", int(defaults.Backoff), "backoff time between retries")
-	rootCmd.Flags().BoolP("force", "f", defaults.Force, "ignore cache and scrape fresh data")
+	rootCmd.Flags().BoolP(f.FlagForce, "f", defaults.Force, "ignore cache and scrape fresh data")
 }
