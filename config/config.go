@@ -21,7 +21,7 @@ type Config struct {
 	Output      string        `toml:"output"`
 	Verbose     bool          `toml:"verbose"`
 	Retry       int           `toml:"retry"`
-	Rate        int           `toml:"rate"`
+	Backoff     time.Duration `toml:"backoff"`
 	Force       bool          `toml:"force"`
 }
 
@@ -51,7 +51,7 @@ func Defaults() Config {
 		Output:      "JSON",
 		Verbose:     false,
 		Retry:       3,
-		Rate:        1,
+		Backoff:     2 * time.Second,
 		Force:       false,
 	}
 }
@@ -120,8 +120,8 @@ func (m *Manager) mergeConfigs(base, override Config) Config {
 	if override.Retry != 0 {
 		result.Retry = override.Retry
 	}
-	if override.Rate != 0 {
-		result.Rate = override.Rate
+	if override.Backoff != 0 {
+		result.Backoff = override.Backoff
 	}
 
 	return result
@@ -206,8 +206,8 @@ func (cfg *Config) Validate() error {
 		errs = append(errs, "retry count cannot be negative")
 	}
 
-	if cfg.Rate <= 0 {
-		errs = append(errs, "rate must be greater than 0")
+	if cfg.Backoff <= 0 {
+		errs = append(errs, "backoff must be greater than 0")
 	}
 
 	if len(errs) > 0 {

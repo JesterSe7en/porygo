@@ -101,7 +101,7 @@ func mergeCLIFlags(cmd *cobra.Command, cfg config.Config) config.Config {
 		cfg.Retry, _ = cmd.Flags().GetInt("retry")
 	}
 	if cmd.Flags().Changed("rate") {
-		cfg.Rate, _ = cmd.Flags().GetInt("rate")
+		cfg.Backoff, _ = cmd.Flags().GetDuration(flags.FlagBackoff)
 	}
 	if cmd.Flags().Changed("force") {
 		cfg.Force, _ = cmd.Flags().GetBool("force")
@@ -123,6 +123,6 @@ func init() {
 	rootCmd.Flags().DurationP("timeout", "t", defaults.Timeout, "request timeout per URL")
 	rootCmd.Flags().StringP("output", "o", defaults.Output, "JSON or CSV")
 	rootCmd.Flags().IntP("retry", "r", defaults.Retry, "number of retries per URL on failure")
-	rootCmd.Flags().IntP("rate", "R", defaults.Rate, "requests per second")
+	rootCmd.Flags().IntP(flags.FlagBackoff, "b", int(defaults.Backoff), "backoff time between retries")
 	rootCmd.Flags().BoolP("force", "f", defaults.Force, "ignore cache and scrape fresh data")
 }

@@ -9,6 +9,6 @@ const (
 	FlagOutput      = "output"
 	FlagVerbose     = "verbose"
 	FlagRetry       = "retry"
-	FlagRate        = "rate"
+	FlagBackoff     = "backoff"
 	FlagForce       = "force"
 )
