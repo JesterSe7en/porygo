@@ -32,7 +32,7 @@ Output can be saved in JSON or CSV format, and verbose logging is available for 
 		manager := config.DefaultManager()
 		cfg, err := manager.Load()
 		if err != nil {
-			return fmt.Errorf("failed to load configuration: %w", err)
+			return fmt.Errorf("failed to load configuration: %s", err.Error())
 		}
 
 		// Override with CLI flags if provided
@@ -40,7 +40,7 @@ Output can be saved in JSON or CSV format, and verbose logging is available for 
 
 		// Validate configuration
 		if err := cfg.Validate(); err != nil {
-			return fmt.Errorf("invalid configuration: %w", err)
+			return fmt.Errorf("invalid configuration: %s", err.Error())
 		}
 
 		l.Info("Scraping with config : %+v", cfg)
@@ -51,7 +51,7 @@ Output can be saved in JSON or CSV format, and verbose logging is available for 
 
 		pool.Submit(func() wp.Result {
 			url := "http://www.google.com"
-			l.Info("attempting to scrape: #w", url)
+			l.Info("attempting to scrape: %s", url)
 			return s.ScrapeWithTimeout(url, 30*time.Second)
 		})
 
@@ -59,11 +59,11 @@ Output can be saved in JSON or CSV format, and verbose logging is available for 
 
 		for res := range pool.Results() {
 			if res.Err != nil {
-				l.Error("failed to get response: %w", err)
+				l.Error("failed to get response: %s", err.Error())
 				continue
 			}
 
-			l.Info("found something: %w", res.Value)
+			l.Info("found something: %s", res.Value)
 
 		}
 		return nil

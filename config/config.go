@@ -71,7 +71,7 @@ func (m *Manager) Load() (Config, error) {
 		l.Debug("Found config file")
 		fileCfg, err := m.loadFromFile()
 		if err != nil {
-			return cfg, fmt.Errorf("failed to load config file: %w", err)
+			return cfg, fmt.Errorf("failed to load config file: %s", err.Error())
 		}
 		cfg = m.mergeConfigs(cfg, fileCfg)
 	}
@@ -85,12 +85,12 @@ func (m *Manager) loadFromFile() (Config, error) {
 
 	data, err := os.ReadFile(m.configPath)
 	if err != nil {
-		return cfg, fmt.Errorf("failed to read config file: %w", err)
+		return cfg, fmt.Errorf("failed to read config file: %s", err.Error())
 	}
 
 	err = toml.Unmarshal(data, &cfg)
 	if err != nil {
-		return cfg, fmt.Errorf("failed to parse config file: %w", err)
+		return cfg, fmt.Errorf("failed to parse config file: %s", err.Error())
 	}
 
 	return cfg, nil
@@ -145,18 +145,18 @@ func (m *Manager) SaveWithForce(cfg Config, force bool) error {
 	// Ensure the directory exists
 	if dir := filepath.Dir(m.configPath); dir != "." {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
-			return fmt.Errorf("failed to create config directory: %w", err)
+			return fmt.Errorf("failed to create config directory: %s", err.Error())
 		}
 	}
 
 	buffer, err := m.encode(cfg)
 	if err != nil {
-		return fmt.Errorf("failed to encode config: %w", err)
+		return fmt.Errorf("failed to encode config: %s", err.Error())
 	}
 
 	err = os.WriteFile(m.configPath, buffer.Bytes(), 0o644)
 	if err != nil {
-		return fmt.Errorf("failed to write config file: %w", err)
+		return fmt.Errorf("failed to write config file: %s", err.Error())
 	}
 
 	return nil
@@ -180,7 +180,7 @@ func (m *Manager) encode(cfg Config) (bytes.Buffer, error) {
 
 	err := toml.NewEncoder(&buffer).Encode(cfg)
 	if err != nil {
-		return buffer, fmt.Errorf("failed to encode config to TOML: %w", err)
+		return buffer, fmt.Errorf("failed to encode config to TOML: %s", err.Error())
 	}
 
 	return buffer, nil
@@ -243,7 +243,7 @@ func Encode(cfg *Config) (bytes.Buffer, error) {
 	var buffer bytes.Buffer
 	err := toml.NewEncoder(&buffer).Encode(cfg)
 	if err != nil {
-		return bytes.Buffer{}, fmt.Errorf("cannot encode config: %w", err)
+		return bytes.Buffer{}, fmt.Errorf("cannot encode config: %s", err.Error())
 	}
 
 	return buffer, nil
