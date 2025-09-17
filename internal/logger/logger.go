@@ -6,32 +6,42 @@ import (
 	"go.uber.org/zap"
 )
 
-var logger *zap.Logger
+var logger *zap.SugaredLogger
 
-func InitLogger() {
-	cfg := zap.NewDevelopmentConfig()
-	cfg.OutputPaths = []string{"scrapego.log"}
-	cfg.ErrorOutputPaths = []string{"scrapego.log"}
+func InitLogger(enabled bool) {
+	if enabled {
+		cfg := zap.NewDevelopmentConfig()
+		cfg.OutputPaths = []string{"scrapego.log"}
+		cfg.ErrorOutputPaths = []string{"scrapego.log"}
 
-	var err error
-	logger, err = cfg.Build()
-	if err != nil {
-		panic("failed to initialize logger " + err.Error())
+		var err error
+		l, err := cfg.Build()
+		if err != nil {
+			panic("failed to initialize logger " + err.Error())
+		}
+
+		logger = l.Sugar()
+	} else {
+		logger = zap.NewNop().Sugar()
 	}
 }
 
 func Info(msg string, args ...any) {
-	logger.Sugar().Infof(msg, args...)
+	logger.Infof(msg, args...)
 }
 
 func Warn(msg string, args ...any) {
-	logger.Sugar().Warnf(msg, args...)
+	logger.Warnf(msg, args...)
 }
 
 func Error(msg string, args ...any) {
-	logger.Sugar().Errorf(msg, args...)
+	logger.Errorf(msg, args...)
 }
 
 func Debug(msg string, args ...any) {
-	logger.Sugar().Debugf(msg, args...)
+	logger.Debugf(msg, args...)
+}
+
+func Sync() {
+	_ = logger.Sync()
 }

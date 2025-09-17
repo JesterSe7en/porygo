@@ -28,6 +28,9 @@ var rootCmd = &cobra.Command{
 Supports rate limiting, retries, and caching of results to avoid redundant requests.
 Output can be saved in JSON or CSV format, and verbose logging is available for progress tracking.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		logger.InitLogger(false)
+		defer logger.Sync()
+
 		// Load configuration with proper precedence
 		manager := config.DefaultManager()
 		cfg, err := manager.Load()
@@ -68,6 +71,7 @@ Output can be saved in JSON or CSV format, and verbose logging is available for 
 			logger.Info("found something: %s", res.Value)
 
 		}
+
 		return nil
 	},
 }
