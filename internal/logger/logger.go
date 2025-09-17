@@ -11,8 +11,9 @@ var logger *zap.SugaredLogger
 func InitLogger(enabled bool) {
 	if enabled {
 		cfg := zap.NewDevelopmentConfig()
-		cfg.OutputPaths = []string{"scrapego.log"}
-		cfg.ErrorOutputPaths = []string{"scrapego.log"}
+		// TODO: if logfile name is specified, output to that not stderr
+		cfg.OutputPaths = []string{"stderr"}
+		cfg.ErrorOutputPaths = []string{"stderr"}
 
 		var err error
 		l, err := cfg.Build()
