@@ -28,16 +28,30 @@ var rootCmd = &cobra.Command{
 Supports rate limiting, retries, and caching of results to avoid redundant requests.
 Output can be saved in JSON or CSV format, and verbose logging is available for progress tracking.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		logger.InitLogger(false)
+		verbose, _ := cmd.PersistentFlags().GetBool(flags.FlagVerbose)
+		filename, _ := cmd.PersistentFlags().GetString(flags.FlagLog)
+		debug, _ := cmd.PersistentFlags().GetBool(flags.FlagDebug)
+		logger.InitLogger(filename, verbose, debug)
 		defer logger.Sync()
 
-		// Load configuration with proper precedence
 		manager := config.DefaultManager()
-		cfg, err := manager.Load()
-		if err != nil {
-			return fmt.Errorf("failed to load configuration: %s", err.Error())
+
+		configFile, err := cmd.Flags().GetString(flags.FlagConfig)
+
+		var cfg config.Config
+		// Load configuration with proper precedence
+		if configFile == "" {
+			cfg = manager.LoadDefaults()
+			logger.Info("using default config values for scraping")
+		} else {
+
+			cfg, err = manager.LoadFromFile(configFile)
+			if err != nil {
+				return fmt.Errorf("failed to load configuration: %s", err.Error())
+			}
 		}
 
+		// Flags manually set takes precedence over whatever config file says
 		// Override with CLI flags if provided
 		cfg = mergeCLIFlags(cmd, cfg)
 
@@ -46,7 +60,7 @@ Output can be saved in JSON or CSV format, and verbose logging is available for 
 			return fmt.Errorf("invalid configuration: %s", err.Error())
 		}
 
-		logger.Info("Scraping with config : %+v", cfg)
+		logger.Info("scraping with config : %+v", cfg)
 
 		// For now, keep the buffer size same as worker count
 		// TODO: evaluate if making the buffer 2x or 3x is worth it
@@ -79,7 +93,6 @@ Output can be saved in JSON or CSV format, and verbose logging is available for 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	logger.Debug("Executing root command...")
 	err := rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
@@ -88,20 +101,14 @@ func Execute() {
 
 // mergeCLIFlags merges CLI flag values into the configuration
 func mergeCLIFlags(cmd *cobra.Command, cfg config.Config) config.Config {
-	if cmd.PersistentFlags().Changed(flags.FlagVerbose) {
-		cfg.Verbose, _ = cmd.Flags().GetBool(flags.FlagVerbose)
-	}
-	if cmd.Flags().Changed(flags.FlagInput) {
-		cfg.Input, _ = cmd.Flags().GetString(flags.FlagInput)
+	if cmd.PersistentFlags().Changed(flags.FlagLog) {
+		cfg.Log, _ = cmd.Flags().GetString(flags.FlagLog)
 	}
 	if cmd.Flags().Changed(flags.FlagConcurrency) {
 		cfg.Concurrency, _ = cmd.Flags().GetInt(flags.FlagConcurrency)
 	}
 	if cmd.Flags().Changed(flags.FlagTimeout) {
 		cfg.Timeout, _ = cmd.Flags().GetDuration(flags.FlagTimeout)
-	}
-	if cmd.Flags().Changed(flags.FlagOutput) {
-		cfg.Output, _ = cmd.Flags().GetString(flags.FlagOutput)
 	}
 	if cmd.Flags().Changed(flags.FlagRetry) {
 		cfg.Retry, _ = cmd.Flags().GetInt(flags.FlagRetry)
@@ -123,11 +130,13 @@ func init() {
 	defaults := config.Defaults()
 
 	// Define flags with default values
+	rootCmd.PersistentFlags().StringP(flags.FlagLog, "l", defaults.Log, "file path to write logs")
+	rootCmd.PersistentFlags().BoolP(flags.FlagDebug, "d", defaults.Debug, "output debug messages")
 	rootCmd.PersistentFlags().BoolP(flags.FlagVerbose, "v", defaults.Verbose, "show logs for each step")
-	rootCmd.Flags().StringP(flags.FlagInput, "i", defaults.Input, "path to file with URLs")
+	// config and Concurrency cannot use same shorthand character
+	rootCmd.PersistentFlags().String(flags.FlagConfig, "", "specifiy config file")
 	rootCmd.Flags().IntP(flags.FlagConcurrency, "c", defaults.Concurrency, "number of workers")
 	rootCmd.Flags().DurationP(flags.FlagTimeout, "t", defaults.Timeout, "request timeout per URL")
-	rootCmd.Flags().StringP(flags.FlagOutput, "o", defaults.Output, "JSON or CSV")
 	rootCmd.Flags().IntP(flags.FlagRetry, "r", defaults.Retry, "number of retries per URL on failure")
 	rootCmd.Flags().IntP(flags.FlagBackoff, "b", int(defaults.Backoff), "backoff time between retries")
 	rootCmd.Flags().BoolP(flags.FlagForce, "f", defaults.Force, "ignore cache and scrape fresh data")

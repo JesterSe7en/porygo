@@ -8,23 +8,34 @@ import (
 
 var logger *zap.SugaredLogger
 
-func InitLogger(enabled bool) {
-	if enabled {
-		cfg := zap.NewDevelopmentConfig()
-		// TODO: if logfile name is specified, output to that not stderr
+func InitLogger(filename string, verbose bool, debug bool) {
+	cfg := zap.NewDevelopmentConfig()
+	if filename == "" {
 		cfg.OutputPaths = []string{"stderr"}
 		cfg.ErrorOutputPaths = []string{"stderr"}
-
-		var err error
-		l, err := cfg.Build()
-		if err != nil {
-			panic("failed to initialize logger " + err.Error())
-		}
-
-		logger = l.Sugar()
 	} else {
-		logger = zap.NewNop().Sugar()
+		cfg.OutputPaths = []string{filename}
+		cfg.ErrorOutputPaths = []string{filename}
 	}
+
+	if debug {
+		// debug + info + warn + error
+		cfg.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
+	} else if verbose {
+		// info + warn + error
+		cfg.Level = zap.NewAtomicLevelAt(zap.InfoLevel)
+	} else {
+		// error only
+		cfg.Level = zap.NewAtomicLevelAt(zap.ErrorLevel)
+	}
+
+	var err error
+	l, err := cfg.Build()
+	if err != nil {
+		panic("failed to initialize logger " + err.Error())
+	}
+
+	logger = l.Sugar()
 }
 
 func Info(msg string, args ...any) {

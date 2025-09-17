@@ -10,11 +10,12 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
-	"github.com/JesterSe7en/scrapego/internal/logger"
 )
 
 // Config holds all configuration options for the scrapego tool
 type Config struct {
+	Log         string        `toml:"log"`
+	Debug       bool          `toml:"debug"`
 	Input       string        `toml:"input"`
 	Concurrency int           `toml:"concurrency"`
 	Timeout     time.Duration `toml:"timeout"`
@@ -45,45 +46,25 @@ func DefaultManager() *Manager {
 // Defaults returns a Config struct with default values
 func Defaults() Config {
 	return Config{
-		Input:       "",
+		Log:         "",
 		Concurrency: 5,
 		Timeout:     10 * time.Second,
 		Output:      "JSON",
-		Verbose:     false,
 		Retry:       3,
 		Backoff:     2 * time.Second,
 		Force:       false,
 	}
 }
 
-// Load loads configuration with the following precedence:
-// 1. Default values
-// 2. Config file (if exists)
-// 3. Environment variables (TODO)
-// 4. CLI flags (handled by caller)
-func (m *Manager) Load() (Config, error) {
+func (m *Manager) LoadDefaults() Config {
 	// Start with defaults
-	cfg := Defaults()
-
-	// Try to load from file if it exists
-	logger.Debug("Attempting to load config file, uses default if none found...")
-	if _, err := os.Stat(m.configPath); err == nil {
-		logger.Debug("Found config file")
-		fileCfg, err := m.loadFromFile()
-		if err != nil {
-			return cfg, fmt.Errorf("failed to load config file: %s", err.Error())
-		}
-		cfg = m.mergeConfigs(cfg, fileCfg)
-	}
-
-	return cfg, nil
+	return Defaults()
 }
 
-// loadFromFile loads configuration from a TOML file
-func (m *Manager) loadFromFile() (Config, error) {
+func (m *Manager) LoadFromFile(filePath string) (Config, error) {
 	var cfg Config
 
-	data, err := os.ReadFile(m.configPath)
+	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return cfg, fmt.Errorf("failed to read config file: %s", err.Error())
 	}
@@ -101,8 +82,8 @@ func (m *Manager) mergeConfigs(base, override Config) Config {
 	result := base
 
 	// Only override non-zero values
-	if override.Input != "" {
-		result.Input = override.Input
+	if override.Log != "" {
+		result.Log = override.Log
 	}
 	if override.Concurrency != 0 {
 		result.Concurrency = override.Concurrency
@@ -114,7 +95,6 @@ func (m *Manager) mergeConfigs(base, override Config) Config {
 		result.Output = override.Output
 	}
 	// Booleans are trickier - we assume false is intentional in config files
-	result.Verbose = override.Verbose
 	result.Force = override.Force
 
 	if override.Retry != 0 {

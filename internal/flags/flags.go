@@ -3,11 +3,11 @@
 package flags
 
 const (
-	// TODO: add a flag for outputing a log
-	FlagInput       = "input"
+	FlagLog         = "log"
+	FlagDebug       = "debug"
+	FlagConfig      = "config"
 	FlagConcurrency = "concurrency"
 	FlagTimeout     = "timeout"
-	FlagOutput      = "output"
 	FlagVerbose     = "verbose"
 	FlagRetry       = "retry"
 	FlagBackoff     = "backoff"
