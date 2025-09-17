@@ -3,6 +3,7 @@
 package flags
 
 const (
+	// TODO: add a flag for outputing a log
 	FlagInput       = "input"
 	FlagConcurrency = "concurrency"
 	FlagTimeout     = "timeout"
