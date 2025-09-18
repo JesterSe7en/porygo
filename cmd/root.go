@@ -29,74 +29,26 @@ var rootCmd = &cobra.Command{
 Supports rate limiting, retries, and caching of results to avoid redundant requests.
 Output can be saved in JSON or CSV format, and verbose logging is available for progress tracking.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		verbose, _ := cmd.PersistentFlags().GetBool(flags.FlagVerbose)
-		filename, _ := cmd.PersistentFlags().GetString(flags.FlagLog)
-		debug, _ := cmd.PersistentFlags().GetBool(flags.FlagDebug)
-		logger.InitLogger(filename, verbose, debug)
+		setupLogging(cmd)
 		defer logger.Sync()
 
-		manager := config.DefaultManager()
-
-		configFile, err := cmd.Flags().GetString(flags.FlagConfig)
-
-		var cfg config.Config
-		// Load configuration with proper precedence
-		if configFile == "" {
-			cfg = manager.LoadDefaults()
-			logger.Info("using default config values for scraping")
-		} else {
-
-			cfg, err = manager.LoadFromFile(configFile)
-			if err != nil {
-				return fmt.Errorf("failed to load configuration: %s", err.Error())
-			}
+		cfg, err := setupConfig(cmd)
+		if err != nil {
+			return err
 		}
-
-		// Flags manually set takes precedence over whatever config file says
-		// Override with CLI flags if provided
-		cfg = mergeCLIFlags(cmd, cfg)
-
-		// Validate configuration
-		if err := cfg.Validate(); err != nil {
-			return fmt.Errorf("invalid configuration: %s", err.Error())
-		}
-
 		logger.Info("scraping with config : %+v", cfg)
 
-		// For now, keep the buffer size same as worker count
-		// TODO: evaluate if making the buffer 2x or 3x is worth it
-
-		// check if stdin has anything
-		scanner := bufio.NewScanner(os.Stdin)
-		for scanner.Scan() {
-			line := scanner.Text()
-			// process the line
-			fmt.Println("Got:", line)
-		}
-		if err := scanner.Err(); err != nil {
-			fmt.Fprintf(os.Stderr, "Error reading stdin: %v\n", err)
+		urls, err := getURLs()
+		if err != nil {
+			return err
 		}
 
-		pool := wp.New(cfg.Concurrency, cfg.Concurrency)
-		pool.Run(cfg.Concurrency)
-
-		pool.Submit(func() wp.Result {
-			url := "http://www.google.com"
-			logger.Info("attempting to scrape: %s", url)
-			return scraper.ScrapeWithRetry(url, cfg.Timeout, cfg.Retry, cfg.Backoff)
-		})
-
-		pool.Close()
-
-		for res := range pool.Results() {
-			if res.Err != nil {
-				logger.Error("failed to get response: %s", err.Error())
-				continue
-			}
-
-			logger.Info("found something: %s", res.Value)
-
+		if len(urls) == 0 {
+			logger.Info("no URLs provided via stdin or arguments, nothing to do")
+			return nil
 		}
+
+		processURLs(cfg, urls)
 
 		return nil
 	},
@@ -109,26 +61,6 @@ func Execute() {
 	if err != nil {
 		os.Exit(1)
 	}
-}
-
-// mergeCLIFlags merges CLI flag values into the configuration
-func mergeCLIFlags(cmd *cobra.Command, cfg config.Config) config.Config {
-	if cmd.Flags().Changed(flags.FlagConcurrency) {
-		cfg.Concurrency, _ = cmd.Flags().GetInt(flags.FlagConcurrency)
-	}
-	if cmd.Flags().Changed(flags.FlagTimeout) {
-		cfg.Timeout, _ = cmd.Flags().GetDuration(flags.FlagTimeout)
-	}
-	if cmd.Flags().Changed(flags.FlagRetry) {
-		cfg.Retry, _ = cmd.Flags().GetInt(flags.FlagRetry)
-	}
-	if cmd.Flags().Changed(flags.FlagBackoff) {
-		cfg.Backoff, _ = cmd.Flags().GetDuration(flags.FlagBackoff)
-	}
-	if cmd.Flags().Changed(flags.FlagForce) {
-		cfg.Force, _ = cmd.Flags().GetBool(flags.FlagForce)
-	}
-	return cfg
 }
 
 func init() {
@@ -151,4 +83,109 @@ func init() {
 	rootCmd.Flags().IntP(flags.FlagRetry, "r", defaults.Retry, "number of retries per URL on failure")
 	rootCmd.Flags().IntP(flags.FlagBackoff, "b", int(defaults.Backoff), "backoff time between retries")
 	rootCmd.Flags().BoolP(flags.FlagForce, "f", defaults.Force, "ignore cache and scrape fresh data")
+}
+
+func setupLogging(cmd *cobra.Command) {
+	verbose, _ := cmd.PersistentFlags().GetBool(flags.FlagVerbose)
+	filename, _ := cmd.PersistentFlags().GetString(flags.FlagLog)
+	debug, _ := cmd.PersistentFlags().GetBool(flags.FlagDebug)
+	logger.InitLogger(filename, verbose, debug)
+}
+
+func setupConfig(cmd *cobra.Command) (config.Config, error) {
+	manager := config.DefaultManager()
+
+	configFile, err := cmd.Flags().GetString(flags.FlagConfig)
+	if err != nil {
+		return config.Config{}, fmt.Errorf("failed to load configuration: %s", err.Error())
+	}
+
+	var cfg config.Config
+	// Load configuration with proper precedence
+	if configFile == "" {
+		cfg = manager.LoadDefaults()
+		logger.Info("using default config values for scraping")
+	} else {
+		cfg, err = manager.LoadFromFile(configFile)
+		if err != nil {
+			return config.Config{}, fmt.Errorf("failed to load configuration: %s", err.Error())
+		}
+	}
+
+	// Flags manually set takes precedence over whatever config file says
+	// Override with CLI flags if provided
+	cfg = mergeCLIFlags(cmd, cfg)
+
+	// Validate configuration
+	if err := cfg.Validate(); err != nil {
+		return config.Config{}, fmt.Errorf("invalid configuration: %s", err.Error())
+	}
+
+	return cfg, nil
+}
+
+// mergeCLIFlags merges CLI flag values into the configuration
+func mergeCLIFlags(cmd *cobra.Command, cfg config.Config) config.Config {
+	if cmd.Flags().Changed(flags.FlagConcurrency) {
+		cfg.Concurrency, _ = cmd.Flags().GetInt(flags.FlagConcurrency)
+	}
+	if cmd.Flags().Changed(flags.FlagTimeout) {
+		cfg.Timeout, _ = cmd.Flags().GetDuration(flags.FlagTimeout)
+	}
+	if cmd.Flags().Changed(flags.FlagRetry) {
+		cfg.Retry, _ = cmd.Flags().GetInt(flags.FlagRetry)
+	}
+	if cmd.Flags().Changed(flags.FlagBackoff) {
+		cfg.Backoff, _ = cmd.Flags().GetDuration(flags.FlagBackoff)
+	}
+	if cmd.Flags().Changed(flags.FlagForce) {
+		cfg.Force, _ = cmd.Flags().GetBool(flags.FlagForce)
+	}
+	return cfg
+}
+
+func getURLs() ([]string, error) {
+	fi, err := os.Stdin.Stat()
+	if err != nil {
+		return nil, fmt.Errorf("failed to stat stdin: %s", err.Error())
+	}
+
+	urls := []string{}
+	if (fi.Mode() & os.ModeCharDevice) == 0 {
+		scanner := bufio.NewScanner(os.Stdin)
+		for scanner.Scan() {
+			urls = append(urls, scanner.Text())
+		}
+
+		if err := scanner.Err(); err != nil {
+			return nil, fmt.Errorf("error reading stdin: %v", err)
+		}
+	}
+
+	return urls, nil
+}
+
+func processURLs(cfg config.Config, urls []string) {
+	// For now, keep the buffer size same as worker count
+	// TODO: evaluate if making the buffer 2x or 3x is worth it
+	pool := wp.New(cfg.Concurrency, cfg.Concurrency)
+	pool.Run(cfg.Concurrency)
+
+	for _, url := range urls {
+		u := url
+		pool.Submit(func() wp.Result {
+			logger.Info("attempting to scrape: %s", u)
+			return scraper.ScrapeWithRetry(u, cfg.Timeout, cfg.Retry, cfg.Backoff)
+		})
+	}
+
+	pool.Close()
+
+	for res := range pool.Results() {
+		if res.Err != nil {
+			logger.Error("failed to get response: %s", res.Err.Error())
+			continue
+		}
+		logger.Info("found something: %s", res.Value)
+	}
 }
