@@ -8,7 +8,9 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"os"
+	"strings"
 
 	cacheCmd "github.com/JesterSe7en/scrapego/cmd/cache"
 	configCmd "github.com/JesterSe7en/scrapego/cmd/config"
@@ -64,6 +66,15 @@ Output can be saved in JSON or CSV format, and verbose logging is available for 
 
 		// For now, keep the buffer size same as worker count
 		// TODO: evaluate if making the buffer 2x or 3x is worth it
+
+		// check if stdin has anything
+		stdin, err := io.ReadAll(os.Stdin)
+		if err != nil {
+			panic(err)
+		}
+		str := string(stdin)
+
+		fmt.Println(strings.TrimSuffix(str, "\n"))
 
 		pool := wp.New(cfg.Concurrency, cfg.Concurrency)
 		pool.Run(cfg.Concurrency)
