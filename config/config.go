@@ -73,33 +73,6 @@ func (m *Manager) LoadFromFile(filePath string) (Config, error) {
 	return cfg, nil
 }
 
-// mergeConfigs merges two config structs, with the second taking precedence
-func (m *Manager) mergeConfigs(base, override Config) Config {
-	result := base
-
-	// Only override non-zero values
-	if override.Concurrency != 0 {
-		result.Concurrency = override.Concurrency
-	}
-	if override.Timeout != 0 {
-		result.Timeout = override.Timeout
-	}
-	if override.Output != "" {
-		result.Output = override.Output
-	}
-	// Booleans are trickier - we assume false is intentional in config files
-	result.Force = override.Force
-
-	if override.Retry != 0 {
-		result.Retry = override.Retry
-	}
-	if override.Backoff != 0 {
-		result.Backoff = override.Backoff
-	}
-
-	return result
-}
-
 // Save writes the configuration to a TOML file
 func (m *Manager) Save(cfg Config) error {
 	return m.SaveWithForce(cfg, false)

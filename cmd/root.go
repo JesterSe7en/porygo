@@ -7,10 +7,9 @@ Copyright © 2025 Alexander Chan alyxchan87@gmail.com
 package cmd
 
 import (
+	"bufio"
 	"fmt"
-	"io"
 	"os"
-	"strings"
 
 	cacheCmd "github.com/JesterSe7en/scrapego/cmd/cache"
 	configCmd "github.com/JesterSe7en/scrapego/cmd/config"
@@ -68,13 +67,15 @@ Output can be saved in JSON or CSV format, and verbose logging is available for 
 		// TODO: evaluate if making the buffer 2x or 3x is worth it
 
 		// check if stdin has anything
-		stdin, err := io.ReadAll(os.Stdin)
-		if err != nil {
-			panic(err)
+		scanner := bufio.NewScanner(os.Stdin)
+		for scanner.Scan() {
+			line := scanner.Text()
+			// process the line
+			fmt.Println("Got:", line)
 		}
-		str := string(stdin)
-
-		fmt.Println(strings.TrimSuffix(str, "\n"))
+		if err := scanner.Err(); err != nil {
+			fmt.Fprintf(os.Stderr, "Error reading stdin: %v\n", err)
+		}
 
 		pool := wp.New(cfg.Concurrency, cfg.Concurrency)
 		pool.Run(cfg.Concurrency)

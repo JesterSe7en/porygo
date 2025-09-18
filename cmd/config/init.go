@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/JesterSe7en/scrapego/config"
+	"github.com/JesterSe7en/scrapego/internal/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -25,19 +26,18 @@ Example:
   scrapego config init
   # creates config.toml with default values`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Initializing config.toml with default values...")
+		logger.Info("initializing config.toml with default values")
 
 		force, _ := cmd.Flags().GetBool("force")
 		manager := config.DefaultManager()
 
 		err := manager.InitDefaultsWithForce(force)
 		if err != nil {
-			fmt.Printf("Error creating config file: %v\n", err)
+			fmt.Printf("error creating config file: %v\n", err)
 			return
 		}
 
-		fmt.Println("Successfully created config.toml with default settings")
-		fmt.Println("You can now edit the file manually or use command-line flags to override values")
+		logger.Info("successfully created config.toml with default settings")
 	},
 }
 
