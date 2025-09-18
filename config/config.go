@@ -14,13 +14,10 @@ import (
 
 // Config holds all configuration options for the scrapego tool
 type Config struct {
-	Log         string        `toml:"log"`
-	Debug       bool          `toml:"debug"`
 	Input       string        `toml:"input"`
 	Concurrency int           `toml:"concurrency"`
 	Timeout     time.Duration `toml:"timeout"`
 	Output      string        `toml:"output"`
-	Verbose     bool          `toml:"verbose"`
 	Retry       int           `toml:"retry"`
 	Backoff     time.Duration `toml:"backoff"`
 	Force       bool          `toml:"force"`
@@ -46,7 +43,6 @@ func DefaultManager() *Manager {
 // Defaults returns a Config struct with default values
 func Defaults() Config {
 	return Config{
-		Log:         "",
 		Concurrency: 5,
 		Timeout:     10 * time.Second,
 		Output:      "JSON",
@@ -82,9 +78,6 @@ func (m *Manager) mergeConfigs(base, override Config) Config {
 	result := base
 
 	// Only override non-zero values
-	if override.Log != "" {
-		result.Log = override.Log
-	}
 	if override.Concurrency != 0 {
 		result.Concurrency = override.Concurrency
 	}

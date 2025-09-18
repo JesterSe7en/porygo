@@ -101,9 +101,6 @@ func Execute() {
 
 // mergeCLIFlags merges CLI flag values into the configuration
 func mergeCLIFlags(cmd *cobra.Command, cfg config.Config) config.Config {
-	if cmd.PersistentFlags().Changed(flags.FlagLog) {
-		cfg.Log, _ = cmd.Flags().GetString(flags.FlagLog)
-	}
 	if cmd.Flags().Changed(flags.FlagConcurrency) {
 		cfg.Concurrency, _ = cmd.Flags().GetInt(flags.FlagConcurrency)
 	}
@@ -130,9 +127,11 @@ func init() {
 	defaults := config.Defaults()
 
 	// Define flags with default values
-	rootCmd.PersistentFlags().StringP(flags.FlagLog, "l", defaults.Log, "file path to write logs")
-	rootCmd.PersistentFlags().BoolP(flags.FlagDebug, "d", defaults.Debug, "output debug messages")
-	rootCmd.PersistentFlags().BoolP(flags.FlagVerbose, "v", defaults.Verbose, "show logs for each step")
+	// log, debug, and verbose is not in the Defaults struct as that is used to init a config.toml file
+	// do not wnat those to be exposed in config.  user wil have to specifiy these flags explicity during the command call
+	rootCmd.PersistentFlags().StringP(flags.FlagLog, "l", "", "file path to write logs")
+	rootCmd.PersistentFlags().BoolP(flags.FlagDebug, "d", false, "output debug messages")
+	rootCmd.PersistentFlags().BoolP(flags.FlagVerbose, "v", false, "show logs for each step")
 	// config and Concurrency cannot use same shorthand character
 	rootCmd.PersistentFlags().String(flags.FlagConfig, "", "specifiy config file")
 	rootCmd.Flags().IntP(flags.FlagConcurrency, "c", defaults.Concurrency, "number of workers")
