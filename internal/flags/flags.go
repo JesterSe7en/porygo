@@ -3,13 +3,13 @@
 package flags
 
 const (
-	FlagLog         = "log"
-	FlagDebug       = "debug"
-	FlagConfig      = "config"
-	FlagConcurrency = "concurrency"
-	FlagTimeout     = "timeout"
-	FlagVerbose     = "verbose"
-	FlagRetry       = "retry"
-	FlagBackoff     = "backoff"
-	FlagForce       = "force"
+	FlagLog         = "log"         // path to log file
+	FlagDebug       = "debug"       // enable debug mode
+	FlagConfig      = "config"      // path to config file
+	FlagConcurrency = "concurrency" // number of concurrent requests
+	FlagTimeout     = "timeout"     // timeout duration for requests
+	FlagVerbose     = "verbose"     // enable verbose mode
+	FlagRetry       = "retry"       // number of retries for failed requests
+	FlagBackoff     = "backoff"     // backoff duration between retries
+	FlagForce       = "force"       // force operation without confirmation
 )
