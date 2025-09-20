@@ -1,3 +1,6 @@
+// Copyright (c) 2025 Alexander Chan
+// SPDX-License-Identifier: MIT
+
 // Package flags defines string constants for command-line flag names used throughout
 // the application.
 package flags

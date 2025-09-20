@@ -1,3 +1,6 @@
+// Copyright (c) 2025 Alexander Chan
+// SPDX-License-Identifier: MIT
+
 // Package config contains the key-value pairs that deal with how to use the scrapego tool
 package config
 

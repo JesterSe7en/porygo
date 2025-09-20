@@ -1,3 +1,6 @@
+// Copyright (c) 2025 Alexander Chan
+// SPDX-License-Identifier: MIT
+
 // Package scraper involves all functions related to actually doing http requests and scraping the
 // data from the response
 package scraper

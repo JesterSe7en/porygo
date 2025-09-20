@@ -1,6 +1,5 @@
-/*
-Copyright © 2025 Alexander Chan alyxchan87@gmail.com
-*/
+// Copyright (c) 2025 Alexander Chan
+// SPDX-License-Identifier: MIT
 
 // Package cmd defines the root command and wires together all
 // subcommands for the scrapgo CLI.

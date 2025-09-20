@@ -1,8 +1,5 @@
-/*
-Copyright © 2025 Alexander Chan alyxchan87@gmail.com
-
-This command is to view and modify the CLI configuration
-*/
+// Copyright (c) 2025 Alexander Chan
+// SPDX-License-Identifier: MIT
 
 // Package config provides the 'config' command for viewing and
 // modifying the CLI configuration settings.

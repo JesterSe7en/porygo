@@ -1,3 +1,6 @@
+// Copyright (c) 2025 Alexander Chan
+// SPDX-License-Identifier: MIT
+
 package workerpool
 
 import "sync"

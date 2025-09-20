@@ -1,8 +1,5 @@
-/*
-Copyright © 2025 Alexander Chan alyxchan87@gmail.com
-
-This command will manage cache results
-*/
+// Copyright (c) 2025 Alexander Chan
+// SPDX-License-Identifier: MIT
 
 // Package cache provides the 'cache' command for inspecting,
 // clearing, or summarizing cached scraping results.

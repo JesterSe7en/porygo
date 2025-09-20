@@ -1,3 +1,6 @@
+// Copyright (c) 2025 Alexander Chan
+// SPDX-License-Identifier: MIT
+
 // Package logger provides logging functionality for the scrapego tool. It wraps zap logger
 // to provide a simple interface for structured logging.
 package logger

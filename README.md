@@ -77,3 +77,5 @@ https://golang.org  -> The Go Programming Language
 - **Teaches Patterns**: Worker pool, error handling, and structured output are demonstrated.
 
 ---
+
+Caching: Probably use bbolt (simple key-value store)  https://github.com/etcd-io/bbolt
