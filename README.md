@@ -79,3 +79,4 @@ https://golang.org  -> The Go Programming Language
 ---
 
 Caching: Probably use bbolt (simple key-value store)  https://github.com/etcd-io/bbolt
+Utilizes bbolt, an embedded key-value database in Go, to efficiently cache HTTP responses, reducing redudant network requests and enhancing performance.
