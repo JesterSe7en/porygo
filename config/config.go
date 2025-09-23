@@ -76,21 +76,8 @@ func (m *Manager) LoadFromFile(filePath string) (Config, error) {
 	return cfg, nil
 }
 
-// Save writes the configuration to a TOML file
 func (m *Manager) Save(cfg Config) error {
-	return m.SaveWithForce(cfg, false)
-}
-
-// SaveWithForce writes the configuration to a TOML file
-// If force is true, it will overwrite an existing config file
-func (m *Manager) SaveWithForce(cfg Config, force bool) error {
 	// Check if config file already exists
-	if !force {
-		if _, err := os.Stat(m.configPath); err == nil {
-			return fmt.Errorf("config file %s already exists. Use force to overwrite", m.configPath)
-		}
-	}
-
 	// Ensure the directory exists
 	if dir := filepath.Dir(m.configPath); dir != "." {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
@@ -111,16 +98,11 @@ func (m *Manager) SaveWithForce(cfg Config, force bool) error {
 	return nil
 }
 
-// InitDefaults creates a config file with default values
-func (m *Manager) InitDefaults() error {
-	return m.InitDefaultsWithForce(false)
-}
-
 // InitDefaultsWithForce creates a config file with default values
 // If force is true, it will overwrite an existing config file
-func (m *Manager) InitDefaultsWithForce(force bool) error {
+func (m *Manager) InitDefaults() error {
 	defaults := Defaults()
-	return m.SaveWithForce(defaults, force)
+	return m.Save(defaults)
 }
 
 // encode converts the config into a TOML buffer
@@ -171,48 +153,4 @@ func (cfg *Config) String() string {
 	var buffer bytes.Buffer
 	toml.NewEncoder(&buffer).Encode(cfg)
 	return buffer.String()
-}
-
-// Deprecated functions for backward compatibility
-// These will be removed in a future version
-
-// DefaultConfig returns default configuration values
-// Deprecated: Use Defaults() instead
-func DefaultConfig() Config {
-	return Defaults()
-}
-
-// Encode converts config to TOML buffer
-// Deprecated: Use Manager.encode() instead
-func Encode(cfg *Config) (bytes.Buffer, error) {
-	if cfg == nil {
-		return bytes.Buffer{}, errors.New("config is nil")
-	}
-
-	var buffer bytes.Buffer
-	err := toml.NewEncoder(&buffer).Encode(cfg)
-	if err != nil {
-		return bytes.Buffer{}, fmt.Errorf("cannot encode config: %s", err.Error())
-	}
-
-	return buffer, nil
-}
-
-// WriteToToml writes config buffer to file
-// Deprecated: Use Manager.Save() instead
-func WriteToToml(buffer bytes.Buffer) error {
-	return os.WriteFile("config.toml", buffer.Bytes(), 0o644)
-}
-
-// InitConfigFile creates config with defaults
-// Deprecated: Use Manager.InitDefaults() instead
-func InitConfigFile() error {
-	return InitConfigFileWithForce(false)
-}
-
-// InitConfigFileWithForce creates config with defaults and force option
-// Deprecated: Use Manager.InitDefaultsWithForce() instead
-func InitConfigFileWithForce(force bool) error {
-	manager := DefaultManager()
-	return manager.InitDefaultsWithForce(force)
 }

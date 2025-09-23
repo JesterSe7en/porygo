@@ -38,10 +38,9 @@ Examples:
 
 		logger.Info("initializing %s with default values", configPath)
 
-		force, _ := cmd.Flags().GetBool("force")
 		manager := config.NewManager(configPath)
 
-		err := manager.InitDefaultsWithForce(force)
+		err := manager.InitDefaults()
 		if err != nil {
 			fmt.Printf("error creating config file: %v\n", err)
 			return
@@ -53,7 +52,4 @@ Examples:
 
 func init() {
 	configCmd.AddCommand(initCmd)
-
-	// Add force flag to allow overwriting existing config files
-	initCmd.Flags().BoolP("force", "f", false, "overwrite existing config.toml file")
 }

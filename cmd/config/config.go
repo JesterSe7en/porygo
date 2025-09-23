@@ -6,8 +6,6 @@
 package config
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
@@ -19,7 +17,6 @@ var configCmd = &cobra.Command{
 rate limits, output paths, or user-agent strings.
 Supports a config file (TOML) to persist settings across sessions.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("config called")
 	},
 }
 
