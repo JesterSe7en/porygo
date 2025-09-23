@@ -22,11 +22,12 @@ import (
 
 // RootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "scrapgo",
+	Use:   "scrapego [urls...]",
 	Short: "Scrape one or more URLs concurrently and save results",
 	Long: `Scrape web pages or APIs from a list of URLs, using a concurrent worker pool.
 Supports rate limiting, retries, and caching of results to avoid redundant requests.
 Output can be saved in JSON or CSV format, and verbose logging is available for progress tracking.`,
+	Args: cobra.ArbitraryArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		setupLogging(cmd)
 		defer logger.Sync()
@@ -37,14 +38,13 @@ Output can be saved in JSON or CSV format, and verbose logging is available for 
 		}
 		logger.Info("scraping with config : %+v", cfg)
 
-		urls, err := getURLs()
+		urls, err := getURLs(args)
 		if err != nil {
 			return err
 		}
 
 		if len(urls) == 0 {
-			logger.Info("no URLs provided via stdin or arguments, nothing to do")
-			return nil
+			return cmd.Help()
 		}
 
 		processURLs(cfg, urls)
@@ -143,25 +143,34 @@ func mergeCLIFlags(cmd *cobra.Command, cfg config.Config) config.Config {
 	return cfg
 }
 
-func getURLs() ([]string, error) {
+func getURLs(args []string) ([]string, error) {
 	fi, err := os.Stdin.Stat()
 	if err != nil {
 		return nil, fmt.Errorf("failed to stat stdin: %s", err.Error())
 	}
 
-	urls := []string{}
+	// Check for stdin first
 	if (fi.Mode() & os.ModeCharDevice) == 0 {
+		urls := []string{}
 		scanner := bufio.NewScanner(os.Stdin)
 		for scanner.Scan() {
 			urls = append(urls, scanner.Text())
 		}
-
 		if err := scanner.Err(); err != nil {
 			return nil, fmt.Errorf("error reading stdin: %v", err)
 		}
+		if len(urls) > 0 {
+			return urls, nil
+		}
 	}
 
-	return urls, nil
+	// If no stdin, use args
+	if len(args) > 0 {
+		return args, nil
+	}
+
+	// No input from stdin or args
+	return []string{}, nil
 }
 
 func processURLs(cfg config.Config, urls []string) {
