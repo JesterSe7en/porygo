@@ -17,7 +17,7 @@ var configCmd = &cobra.Command{
 	Short: "View and modify CLI configuration",
 	Long: `View or update the scraper's configuration settings, such as default concurrency,
 rate limits, output paths, or user-agent strings.
-Supports a config file (YAML) to persist settings across sessions.`,
+Supports a config file (TOML) to persist settings across sessions.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("config called")
 	},
