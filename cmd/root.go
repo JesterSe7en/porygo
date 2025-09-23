@@ -161,23 +161,34 @@ func getURLs(args []string) ([]string, error) {
 			return nil, fmt.Errorf("error reading stdin: %v", err)
 		}
 		if len(urls) > 0 {
+			err := validateURLs(urls)
+			if err != nil {
+				return nil, err
+			}
 			return urls, nil
 		}
 	}
 
 	// If no stdin, use args
 	if len(args) > 0 {
-		// validate the args are URLs
-		for _, arg := range args {
-			if _, err := url.Parse(arg); err != nil {
-				return nil, fmt.Errorf("invalid URL: %s", arg)
-			}
+		err := validateURLs(args)
+		if err != nil {
+			return nil, err
 		}
 		return args, nil
 	}
 
 	// No input from stdin or args
 	return []string{}, nil
+}
+
+func validateURLs(inputs []string) error {
+	for _, input := range inputs {
+		if _, err := url.Parse(input); err != nil {
+			return fmt.Errorf("invalid URL: %s", input)
+		}
+	}
+	return nil
 }
 
 func processURLs(cfg config.Config, urls []string) {
