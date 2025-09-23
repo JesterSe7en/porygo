@@ -14,6 +14,7 @@ import (
 	cacheCmd "github.com/JesterSe7en/scrapego/cmd/cache"
 	configCmd "github.com/JesterSe7en/scrapego/cmd/config"
 	"github.com/JesterSe7en/scrapego/config"
+	"github.com/JesterSe7en/scrapego/internal/database"
 	"github.com/JesterSe7en/scrapego/internal/flags"
 	"github.com/JesterSe7en/scrapego/internal/logger"
 	"github.com/JesterSe7en/scrapego/internal/scraper"
@@ -49,6 +50,8 @@ Output can be saved in JSON or CSV format, and verbose logging is available for 
 		}
 
 		processURLs(cfg, urls)
+
+		defer database.Close()
 
 		return nil
 	},
