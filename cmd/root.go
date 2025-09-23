@@ -8,6 +8,7 @@ package cmd
 import (
 	"bufio"
 	"fmt"
+	"net/url"
 	"os"
 
 	cacheCmd "github.com/JesterSe7en/scrapego/cmd/cache"
@@ -166,6 +167,12 @@ func getURLs(args []string) ([]string, error) {
 
 	// If no stdin, use args
 	if len(args) > 0 {
+		// validate the args are URLs
+		for _, arg := range args {
+			if _, err := url.Parse(arg); err != nil {
+				return nil, fmt.Errorf("invalid URL: %s", arg)
+			}
+		}
 		return args, nil
 	}
 
