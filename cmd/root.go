@@ -76,11 +76,11 @@ func init() {
 	rootCmd.PersistentFlags().BoolP(flags.FlagDebug, "d", false, "output debug messages")
 	rootCmd.PersistentFlags().BoolP(flags.FlagVerbose, "v", false, "show logs for each step")
 	// config and Concurrency cannot use same shorthand character
-	rootCmd.PersistentFlags().String(flags.FlagConfig, "", "specifiy config file")
+	rootCmd.PersistentFlags().String(flags.FlagConfig, "", "specify config file")
 	rootCmd.Flags().IntP(flags.FlagConcurrency, "c", defaults.Concurrency, "number of workers")
 	rootCmd.Flags().DurationP(flags.FlagTimeout, "t", defaults.Timeout, "request timeout per URL")
 	rootCmd.Flags().IntP(flags.FlagRetry, "r", defaults.Retry, "number of retries per URL on failure")
-	rootCmd.Flags().IntP(flags.FlagBackoff, "b", int(defaults.Backoff), "backoff time between retries")
+	rootCmd.Flags().DurationP(flags.FlagBackoff, "b", defaults.Backoff, "backoff time between retries")
 	rootCmd.Flags().BoolP(flags.FlagForce, "f", defaults.Force, "ignore cache and scrape fresh data")
 }
 
