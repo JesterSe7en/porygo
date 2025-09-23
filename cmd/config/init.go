@@ -13,22 +13,33 @@ import (
 
 // initCmd represents the init command
 var initCmd = &cobra.Command{
-	Use:   "init",
-	Short: "Initialize a default config.toml file with default settings",
-	Long: `The init command creates a new config.toml file in the current directory
+	Use:   "init [filename]",
+	Short: "Initialize a default config file with default settings. Defaults to config.toml",
+	Long: `The init command creates a new config file in the current directory
 with default settings for all available options.
+
+If a filename is provided, it will be used. Otherwise, it defaults to 'config.toml'.
 
 Use this command if you want to generate a fresh configuration file. You can then edit the file
 manually or override its values using command-line flags.
 
-Example:
+Examples:
   scrapego config init
-  # creates config.toml with default values`,
+  # creates config.toml with default values
+
+  scrapego config init my-config.toml
+  # creates my-config.toml with default values`,
+	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		logger.Info("initializing config.toml with default values")
+		configPath := "config.toml"
+		if len(args) > 0 {
+			configPath = args[0]
+		}
+
+		logger.Info("initializing %s with default values", configPath)
 
 		force, _ := cmd.Flags().GetBool("force")
-		manager := config.DefaultManager()
+		manager := config.NewManager(configPath)
 
 		err := manager.InitDefaultsWithForce(force)
 		if err != nil {
@@ -36,7 +47,7 @@ Example:
 			return
 		}
 
-		logger.Info("successfully created config.toml with default settings")
+		logger.Info("successfully created %s with default settings", configPath)
 	},
 }
 
