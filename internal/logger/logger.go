@@ -28,7 +28,7 @@ func InitLogger(filename string, verbose bool, debug bool) {
 		// info + warn + error
 		cfg.Level = zap.NewAtomicLevelAt(zap.InfoLevel)
 	} else {
-		// error only
+		// error + warn
 		cfg.Level = zap.NewAtomicLevelAt(zap.WarnLevel)
 	}
 
