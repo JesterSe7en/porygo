@@ -5,11 +5,14 @@
 package database
 
 import (
+	"bytes"
+	"encoding/gob"
 	"errors"
 	"os"
 	"path/filepath"
 	"runtime"
 	"sync"
+	"time"
 
 	"go.etcd.io/bbolt"
 )
@@ -20,6 +23,14 @@ var (
 	dbPath     string
 	bucketName = []byte("cache")
 )
+
+type CacheEntry struct {
+	Timestamp int64
+	Data      []byte
+}
+
+var ErrNotFound = errors.New("entry not found")
+var ErrBucketNotFound = errors.New("bucket not found")
 
 // getCachePath determines the cache path cross-platform.
 func getCachePath() (string, error) {
@@ -75,32 +86,50 @@ func Put(key, value []byte) error {
 		return err
 	}
 
+	entry := CacheEntry{
+		Timestamp: time.Now().Unix(),
+		Data:      value,
+	}
+
+	encodedEntry := encode(entry)
+
 	return db.Update(func(tx *bbolt.Tx) error {
 		b := tx.Bucket(bucketName)
 		if b == nil {
-			return errors.New("bucket does not exist")
+			return ErrBucketNotFound
 		}
-		return b.Put(key, value)
+
+		return b.Put(key, encodedEntry)
 	})
 }
 
 // Get retrieves a value by key.
-func Get(key []byte) ([]byte, error) {
+func Get(key []byte) (CacheEntry, error) {
 	db, err := getDB()
 	if err != nil {
-		return nil, err
+		return CacheEntry{}, err
 	}
 
 	var val []byte
 	err = db.View(func(tx *bbolt.Tx) error {
 		b := tx.Bucket(bucketName)
 		if b == nil {
-			return errors.New("bucket does not exist")
+			return ErrBucketNotFound
 		}
 		val = b.Get(key)
 		return nil
 	})
-	return val, err
+
+	// don't try to decode if value is nil
+	if val == nil {
+		return CacheEntry{}, ErrNotFound
+	}
+
+	cacheEntry, err := decode(val)
+	if err != nil {
+		return CacheEntry{}, err
+	}
+	return cacheEntry, err
 }
 
 // Delete removes a key from the bucket.
@@ -113,7 +142,7 @@ func Delete(key []byte) error {
 	return db.Update(func(tx *bbolt.Tx) error {
 		b := tx.Bucket(bucketName)
 		if b == nil {
-			return errors.New("bucket does not exist")
+			return ErrBucketNotFound
 		}
 		return b.Delete(key)
 	})
@@ -142,4 +171,24 @@ func Close() error {
 		return db.Close()
 	}
 	return nil
+}
+
+func encode(entry CacheEntry) []byte {
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	err := enc.Encode(entry)
+	if err != nil {
+		return nil
+	}
+	return buf.Bytes()
+}
+
+func decode(data []byte) (CacheEntry, error) {
+	var entry CacheEntry
+	dec := gob.NewDecoder(bytes.NewReader(data))
+	err := dec.Decode(&entry)
+	if err != nil {
+		return CacheEntry{}, err
+	}
+	return entry, nil
 }

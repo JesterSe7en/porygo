@@ -11,6 +11,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/JesterSe7en/scrapego/internal/database"
+	"github.com/JesterSe7en/scrapego/internal/logger"
 	wp "github.com/JesterSe7en/scrapego/internal/workerpool"
 )
 
@@ -19,16 +21,59 @@ import (
 var client = &http.Client{}
 
 func ScrapeWithRetry(url string, timeout time.Duration, retries int, backoff time.Duration) wp.Result {
-	var lastErr error
 
-	for attempt := 0; attempt <= retries; attempt++ {
+	// check cache if available
+	cachedEntry, err := database.Get([]byte(url))
+	found := false
+	// check if the error is something else other than not found.
+	// if err is not found, don't execute the cache check
+	if err != nil && err != database.ErrNotFound {
+		logger.Error("Failed to retrieve %s from cache: %v", url, err)
+	} else {
+		if err == nil {
+			found = true
+		}
+	}
+
+	if found {
+		var expiration = time.Hour
+		// check if data is more than an hour old
+		entryTime := time.Unix(cachedEntry.Timestamp, 0)
+		if time.Since(entryTime) < expiration {
+			logger.Debug("Using cached data for %s, not expired yet", url)
+			return wp.Result{
+				Value: cachedEntry.Data,
+				Err:   nil,
+			}
+		} else {
+			logger.Debug("Cached data for %s is old, discarding...", url)
+			err := database.Delete([]byte(url))
+			if err != nil {
+				logger.Error("Failed to delete %s from cache: %v", url, err)
+			}
+		}
+	}
+
+	var lastErr error
+	logger.Debug("Starting scrape retry loop for URL %s with %d retries.", url, retries)
+	for attempt := 1; attempt <= retries; attempt++ {
+		logger.Info("Attempting to scrape URL %s (attempt %d of %d)", url, attempt, retries)
 		result := scrape(url, timeout)
 		if result.Err == nil {
+
+			logger.Info("Successfully scraped URL %s.", url)
+			// add to cache
+			logger.Debug("Adding %s to cache...", url)
+			database.Put([]byte(url), []byte("this is the cache for "+url))
+
+			logger.Debug("Cache put operation successful.")
 			return result
 		}
 		lastErr = result.Err
 
+		logger.Warn("Scraping attempt %d for URL %s failed: %v", attempt, url, result.Err)
 		if attempt < retries {
+			logger.Info("Waiting %v before the next retry.", backoff)
 			time.Sleep(backoff)
 		}
 	}
