@@ -92,7 +92,6 @@ func init() {
 	rootCmd.Flags().IntP(flags.FlagRetry, "r", defaults.Retry, "number of retries per URL on failure")
 	rootCmd.Flags().DurationP(flags.FlagBackoff, "b", defaults.Backoff, "backoff time between retries")
 	rootCmd.Flags().BoolP(flags.FlagForce, "f", defaults.Force, "ignore cache and scrape fresh data")
-
 }
 
 func setupLogging(cmd *cobra.Command) {
@@ -208,7 +207,6 @@ func processURLs(cfg config.Config, urls []string, cache storage.CacheStorage) {
 	pool.Run(cfg.Concurrency)
 
 	for _, url := range urls {
-		url := url
 		pool.Submit(func() wp.Result {
 			return scraper.ScrapeWithRetry(url, cfg.Timeout, cfg.Retry, cfg.Backoff, cache)
 		})
