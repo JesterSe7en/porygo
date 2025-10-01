@@ -11,18 +11,17 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/JesterSe7en/scrapego/internal/database"
 	"github.com/JesterSe7en/scrapego/internal/logger"
+	"github.com/JesterSe7en/scrapego/internal/storage"
 	wp "github.com/JesterSe7en/scrapego/internal/workerpool"
 )
 
 // TODO: Look into goquery library to parse html better
-
 var client = &http.Client{}
 
 // ScrapeWithRetry is the main public function that orchestrates scraping with caching and retry logic
-func ScrapeWithRetry(url string, timeout time.Duration, retries int, backoff time.Duration) wp.Result {
-	if cachedResult := checkCache(url); cachedResult != nil {
+func ScrapeWithRetry(url string, timeout time.Duration, retries int, backoff time.Duration, cache storage.CacheStorage) wp.Result {
+	if cachedResult := checkCache(url, cache); cachedResult != nil {
 		return *cachedResult
 	}
 
@@ -31,8 +30,17 @@ func ScrapeWithRetry(url string, timeout time.Duration, retries int, backoff tim
 	if result.Err != nil {
 		logger.Error("failed to scrape %s: %v", url, result.Err)
 	} else {
-		storeCacheResult(url)
+		var data []byte
+		switch v := result.Value.(type) {
+		case []byte:
+			data = v
+		case string:
+			data = []byte(v)
+		}
+
+		storeCacheResult(url, data, cache)
 	}
+
 	return result
 }
 
@@ -107,54 +115,53 @@ func performScrapeWithRetries(url string, timeout time.Duration, retries int, ba
 }
 
 // checkCache retrieves and validates cached data for the given URL
-func checkCache(url string) *wp.Result {
-	cachedEntry, err := database.Get([]byte(url))
+func checkCache(url string, cache storage.CacheStorage) *wp.Result {
+	cached, err := cache.Get(context.Background(), url)
 
-	// Handle database errors (not including "not found")
-	if err != nil && err != database.ErrNotFound {
+	if err != nil && err != storage.ErrNotFound {
 		logger.Error("Failed to retrieve %s from cache: %v", url, err)
 		return nil
 	}
 
-	// No cached entry found
-	if err == database.ErrNotFound {
+	if err == storage.ErrNotFound {
 		return nil
 	}
 
-	// Check if cached entry is expired
-	if isCacheExpired(&cachedEntry) {
-		cleanupExpiredCache(url)
+	if time.Now().After(cached.ExpirationTime) {
+		cleanupExpiredCache(url, cache)
 		return nil
 	}
 
 	// Return valid cached result
 	logger.Debug("Using cached data for %s, not expired yet", url)
 	return &wp.Result{
-		Value: cachedEntry.Data,
+		Value: cached,
 		Err:   nil,
 	}
 }
 
-// isCacheExpired checks if a cache entry has exceeded its expiration time
-// TODO: not sure if I should pass pointer here. Data could be large theoretically
-func isCacheExpired(entry *database.CacheEntry) bool {
-	const expiration = time.Hour
-	entryTime := time.Unix(entry.Timestamp, 0)
-	return time.Since(entryTime) >= expiration
-}
-
 // cleanupExpiredCache removes expired cache entries
-func cleanupExpiredCache(url string) {
+func cleanupExpiredCache(url string, cache storage.CacheStorage) {
 	logger.Debug("Cached data for %s is old, discarding...", url)
-	if err := database.Delete([]byte(url)); err != nil {
+	if err := cache.Delete(context.Background(), url); err != nil {
 		logger.Error("Failed to delete %s from cache: %v", url, err)
 	}
 }
 
 // storeCacheResult stores the scraped result in the cache
-func storeCacheResult(url string) {
+func storeCacheResult(url string, data []byte, cache storage.CacheStorage) {
 	logger.Debug("Adding %s to cache...", url)
+
+	entry := storage.CacheEntry{
+		ExpirationTime: time.Now().Add(1 * time.Hour),
+		Value:          data,
+	}
+
+	err := cache.Set(context.Background(), url, entry)
+	if err != nil {
+		logger.Error("Failed to store %s in cache: %v", url, err)
+	}
+
 	// TODO: actually put real data into the cache
-	database.Put([]byte(url), []byte("this is the cache for "+url))
 	logger.Debug("Cache put operation successful.")
 }

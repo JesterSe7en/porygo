@@ -14,10 +14,11 @@ import (
 	cacheCmd "github.com/JesterSe7en/scrapego/cmd/cache"
 	configCmd "github.com/JesterSe7en/scrapego/cmd/config"
 	"github.com/JesterSe7en/scrapego/config"
-	"github.com/JesterSe7en/scrapego/internal/database"
+
 	"github.com/JesterSe7en/scrapego/internal/flags"
 	"github.com/JesterSe7en/scrapego/internal/logger"
 	"github.com/JesterSe7en/scrapego/internal/scraper"
+	"github.com/JesterSe7en/scrapego/internal/storage"
 	wp "github.com/JesterSe7en/scrapego/internal/workerpool"
 	"github.com/spf13/cobra"
 )
@@ -34,6 +35,13 @@ Output can be saved in JSON or CSV format, and verbose logging is available for 
 		setupLogging(cmd)
 		defer logger.Sync()
 
+		manager := storage.GetCacheManager()
+		cache, err := manager.GetCache()
+		if err != nil {
+			return err
+		}
+		defer manager.Close()
+
 		cfg, err := setupConfig(cmd)
 		if err != nil {
 			return err
@@ -49,9 +57,7 @@ Output can be saved in JSON or CSV format, and verbose logging is available for 
 			return cmd.Help()
 		}
 
-		processURLs(cfg, urls)
-
-		defer database.Close()
+		processURLs(cfg, urls, cache)
 
 		return nil
 	},
@@ -86,6 +92,7 @@ func init() {
 	rootCmd.Flags().IntP(flags.FlagRetry, "r", defaults.Retry, "number of retries per URL on failure")
 	rootCmd.Flags().DurationP(flags.FlagBackoff, "b", defaults.Backoff, "backoff time between retries")
 	rootCmd.Flags().BoolP(flags.FlagForce, "f", defaults.Force, "ignore cache and scrape fresh data")
+
 }
 
 func setupLogging(cmd *cobra.Command) {
@@ -194,17 +201,16 @@ func validateURLs(inputs []string) error {
 	return nil
 }
 
-func processURLs(cfg config.Config, urls []string) {
+func processURLs(cfg config.Config, urls []string, cache storage.CacheStorage) {
 	// For now, keep the buffer size same as worker count
 	// TODO: evaluate if making the buffer 2x or 3x is worth it
 	pool := wp.New(cfg.Concurrency, cfg.Concurrency)
 	pool.Run(cfg.Concurrency)
 
 	for _, url := range urls {
-		u := url
+		url := url
 		pool.Submit(func() wp.Result {
-			logger.Info("attempting to scrape: %s", u)
-			return scraper.ScrapeWithRetry(u, cfg.Timeout, cfg.Retry, cfg.Backoff)
+			return scraper.ScrapeWithRetry(url, cfg.Timeout, cfg.Retry, cfg.Backoff, cache)
 		})
 	}
 
@@ -212,9 +218,8 @@ func processURLs(cfg config.Config, urls []string) {
 
 	for res := range pool.Results() {
 		if res.Err != nil {
-			logger.Error("failed to get response: %s", res.Err.Error())
+			logger.Error("Failed to get response: %s", res.Err.Error())
 			continue
 		}
-		logger.Info("found something: %s", res.Value)
 	}
 }

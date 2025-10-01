@@ -4,7 +4,10 @@
 package cache
 
 import (
-	"github.com/JesterSe7en/scrapego/internal/database"
+	"context"
+	"fmt"
+
+	"github.com/JesterSe7en/scrapego/internal/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -22,10 +25,17 @@ has changed and you need to force an update.
 Example:
   scrapego cache clear`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return database.ClearCache()
-	},
-}
+		manager := storage.GetCacheManager()
+		cache, err := manager.GetCache()
+		if err != nil {
+			return fmt.Errorf("failed to get cache: %w", err)
+		}
 
-func init() {
-	cacheCmd.AddCommand(clearCmd)
+		if err := cache.Clear(context.Background()); err != nil {
+			return fmt.Errorf("failed to clear cache: %w", err)
+		}
+
+		fmt.Println("Cache cleared successfully.")
+		return nil
+	},
 }
