@@ -32,8 +32,8 @@ Supports rate limiting, retries, and caching of results to avoid redundant reque
 Output can be saved in JSON or CSV format, and verbose logging is available for progress tracking.`,
 	Args: cobra.ArbitraryArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		setupLogging(cmd)
-		defer logger.Sync()
+		// setupLogging(cmd)
+		// defer logger.Sync()
 
 		manager := storage.GetCacheManager()
 		cache, err := manager.GetCache()
@@ -46,7 +46,7 @@ Output can be saved in JSON or CSV format, and verbose logging is available for 
 		if err != nil {
 			return err
 		}
-		logger.Info("scraping with config : %+v", cfg)
+		logger.Debug("scraping with config : %+v", cfg)
 
 		urls, err := getURLs(args)
 		if err != nil {
@@ -66,6 +66,8 @@ Output can be saved in JSON or CSV format, and verbose logging is available for 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
+	setupLogging(rootCmd)
+	defer logger.Sync()
 	err := rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
@@ -90,8 +92,10 @@ func init() {
 	rootCmd.Flags().IntP(flags.FlagConcurrency, "c", defaults.Concurrency, "number of workers")
 	rootCmd.Flags().DurationP(flags.FlagTimeout, "t", defaults.Timeout, "request timeout per URL")
 	rootCmd.Flags().IntP(flags.FlagRetry, "r", defaults.Retry, "number of retries per URL on failure")
-	rootCmd.Flags().DurationP(flags.FlagBackoff, "b", defaults.Backoff, "backoff time between retries")
+	rootCmd.Flags().Duration("retry-delay", defaults.Backoff.BaseDelay, "base delay between retries (exponential backoff applied)")
+	rootCmd.Flags().Bool("retry-jitter", defaults.Backoff.Jitter, "enable jitter for retry delays")
 	rootCmd.Flags().BoolP(flags.FlagForce, "f", defaults.Force, "ignore cache and scrape fresh data")
+
 }
 
 func setupLogging(cmd *cobra.Command) {
@@ -113,7 +117,7 @@ func setupConfig(cmd *cobra.Command) (config.Config, error) {
 	// Load configuration with proper precedence
 	if configFile == "" {
 		cfg = manager.LoadDefaults()
-		logger.Info("using default config values for scraping")
+		logger.Info("Using default config values for scraping")
 	} else {
 		cfg, err = manager.LoadFromFile(configFile)
 		if err != nil {
@@ -144,8 +148,11 @@ func mergeCLIFlags(cmd *cobra.Command, cfg config.Config) config.Config {
 	if cmd.Flags().Changed(flags.FlagRetry) {
 		cfg.Retry, _ = cmd.Flags().GetInt(flags.FlagRetry)
 	}
-	if cmd.Flags().Changed(flags.FlagBackoff) {
-		cfg.Backoff, _ = cmd.Flags().GetDuration(flags.FlagBackoff)
+	if cmd.Flags().Changed("retry-delay") {
+		cfg.Backoff.BaseDelay, _ = cmd.Flags().GetDuration("retry-delay")
+	}
+	if cmd.Flags().Changed("retry-jitter") {
+		cfg.Backoff.Jitter, _ = cmd.Flags().GetBool("retry-jitter")
 	}
 	if cmd.Flags().Changed(flags.FlagForce) {
 		cfg.Force, _ = cmd.Flags().GetBool(flags.FlagForce)
@@ -208,7 +215,7 @@ func processURLs(cfg config.Config, urls []string, cache storage.CacheStorage) {
 
 	for _, url := range urls {
 		pool.Submit(func() wp.Result {
-			return scraper.ScrapeWithRetry(url, cfg.Timeout, cfg.Retry, cfg.Backoff, cache)
+			return scraper.ScrapeWithRetry(url, cfg.Retry, cfg.Timeout, cfg.Backoff, cfg.Database.Expiration, cache)
 		})
 	}
 
@@ -219,5 +226,8 @@ func processURLs(cfg config.Config, urls []string, cache storage.CacheStorage) {
 			logger.Error("Failed to get response: %s", res.Err.Error())
 			continue
 		}
+
+		// put the results into stdout
+		fmt.Println(res.Value)
 	}
 }

@@ -6,8 +6,6 @@
 package cache
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
@@ -18,9 +16,6 @@ var cacheCmd = &cobra.Command{
 	Long: `This command provides tools for clearing cached scraping results.
 This helps avoid unnecessary network requests and enables quick access to past data.
 Subcommands include 'clear' to remove entries.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("cache called")
-	},
 }
 
 // NewCommand returns the cache command for inspecting, clearing,

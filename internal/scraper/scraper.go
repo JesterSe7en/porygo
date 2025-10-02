@@ -8,9 +8,12 @@ package scraper
 import (
 	"context"
 	"fmt"
+	"math"
+	"math/rand"
 	"net/http"
 	"time"
 
+	"github.com/JesterSe7en/scrapego/config"
 	"github.com/JesterSe7en/scrapego/internal/logger"
 	"github.com/JesterSe7en/scrapego/internal/storage"
 	wp "github.com/JesterSe7en/scrapego/internal/workerpool"
@@ -20,15 +23,15 @@ import (
 var client = &http.Client{}
 
 // ScrapeWithRetry is the main public function that orchestrates scraping with caching and retry logic
-func ScrapeWithRetry(url string, timeout time.Duration, retries int, backoff time.Duration, cache storage.CacheStorage) wp.Result {
+func ScrapeWithRetry(url string, retries int, timeout time.Duration, backoffConfig config.BackoffConfig, expiration time.Duration, cache storage.CacheStorage) wp.Result {
 	if cachedResult := checkCache(url, cache); cachedResult != nil {
 		return *cachedResult
 	}
 
-	result := performScrapeWithRetries(url, timeout, retries, backoff)
+	result := performScrapeWithRetries(url, timeout, retries, backoffConfig)
 
 	if result.Err != nil {
-		logger.Error("failed to scrape %s: %v", url, result.Err)
+		logger.Error("Failed to scrape %s: %v", url, result.Err)
 	} else {
 		var data []byte
 		switch v := result.Value.(type) {
@@ -38,7 +41,7 @@ func ScrapeWithRetry(url string, timeout time.Duration, retries int, backoff tim
 			data = []byte(v)
 		}
 
-		storeCacheResult(url, data, cache)
+		storeCacheResult(url, data, expiration, cache)
 	}
 
 	return result
@@ -84,7 +87,7 @@ func scrape(url string, timeout time.Duration) wp.Result {
 }
 
 // performScrapeWithRetries handles the retry logic for scraping
-func performScrapeWithRetries(url string, timeout time.Duration, retries int, backoff time.Duration) wp.Result {
+func performScrapeWithRetries(url string, timeout time.Duration, retries int, backoffConfig config.BackoffConfig) wp.Result {
 	var lastErr error
 
 	logger.Debug("Starting scrape retry loop for URL %s with %d retries.", url, retries)
@@ -99,12 +102,14 @@ func performScrapeWithRetries(url string, timeout time.Duration, retries int, ba
 		}
 
 		lastErr = result.Err
-		logger.Warn("Scraping attempt %d for URL %s failed: %v", attempt, url, result.Err)
+		// Don't print out the stack trace
+		logger.Warn("Scraping attempt %d for URL %s failed: %s", attempt, url, result.Err.Error())
 
 		// Wait before retry (except for last attempt)
 		if attempt < retries {
-			logger.Info("Waiting %v before the next retry.", backoff)
-			time.Sleep(backoff)
+			delay := calculateBackoffDelay(attempt-1, backoffConfig)
+			logger.Info("Waiting %v before the next retry.", delay)
+			time.Sleep(delay)
 		}
 	}
 
@@ -149,11 +154,11 @@ func cleanupExpiredCache(url string, cache storage.CacheStorage) {
 }
 
 // storeCacheResult stores the scraped result in the cache
-func storeCacheResult(url string, data []byte, cache storage.CacheStorage) {
+func storeCacheResult(url string, data []byte, expiration time.Duration, cache storage.CacheStorage) {
 	logger.Debug("Adding %s to cache...", url)
 
 	entry := storage.CacheEntry{
-		ExpirationTime: time.Now().Add(1 * time.Hour),
+		ExpirationTime: time.Now().Add(expiration),
 		Value:          data,
 	}
 
@@ -162,6 +167,31 @@ func storeCacheResult(url string, data []byte, cache storage.CacheStorage) {
 		logger.Error("Failed to store %s in cache: %v", url, err)
 	}
 
-	// TODO: actually put real data into the cache
 	logger.Debug("Cache put operation successful.")
+}
+
+// calculateBackoffDelay calculates the delay for exponential backoff with optional jitter
+// Uses fixed multiplier of 2.0 and auto-calculated max delay for production safety
+func calculateBackoffDelay(attempt int, cfg config.BackoffConfig) time.Duration {
+	const multiplier = 2.0
+
+	// Calculate exponential backoff: baseDelay * 2^attempt
+	// Formula from: https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
+	delay := float64(cfg.BaseDelay) * math.Pow(multiplier, float64(attempt))
+
+	// Auto-calculate reasonable max delay: max(30s, baseDelay * 16)
+	maxDelay := 30 * time.Second
+	if baseMax := cfg.BaseDelay * 16; baseMax > maxDelay {
+		maxDelay = baseMax
+	}
+
+	if time.Duration(delay) > maxDelay {
+		delay = float64(maxDelay)
+	}
+
+	if cfg.Jitter {
+		delay = rand.Float64() * delay
+	}
+
+	return time.Duration(delay)
 }

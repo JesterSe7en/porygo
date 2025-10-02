@@ -15,6 +15,21 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
+const (
+	configWriteMode = 0o644 // root r/w else r
+	configDirMode   = 0o755 // root r/w/x else r/x
+)
+
+type Database struct {
+	Expiration time.Duration `toml:"expiration"`
+}
+
+// BackoffConfig defines exponential backoff configuration
+type BackoffConfig struct {
+	BaseDelay time.Duration `toml:"base_delay"` // Initial delay between retries
+	Jitter    bool          `toml:"jitter"`     // Whether to add jitter (default: true)
+}
+
 // Config holds all configuration options for the scrapego tool
 type Config struct {
 	Input       string        `toml:"input"`
@@ -22,7 +37,8 @@ type Config struct {
 	Timeout     time.Duration `toml:"timeout"`
 	Output      string        `toml:"output"`
 	Retry       int           `toml:"retry"`
-	Backoff     time.Duration `toml:"backoff"`
+	Backoff     BackoffConfig `toml:"backoff"`
+	Database    Database      `toml:"database"`
 	Force       bool          `toml:"force"`
 }
 
@@ -50,8 +66,14 @@ func Defaults() Config {
 		Timeout:     10 * time.Second,
 		Output:      "JSON",
 		Retry:       3,
-		Backoff:     2 * time.Second,
-		Force:       false,
+		Backoff: BackoffConfig{
+			BaseDelay: 1 * time.Second,
+			Jitter:    true,
+		},
+		Force: false,
+		Database: Database{
+			Expiration: 24 * time.Hour,
+		},
 	}
 }
 
@@ -80,7 +102,7 @@ func (m *Manager) Save(cfg Config) error {
 	// Check if config file already exists
 	// Ensure the directory exists
 	if dir := filepath.Dir(m.configPath); dir != "." {
-		if err := os.MkdirAll(dir, 0o755); err != nil {
+		if err := os.MkdirAll(dir, configDirMode); err != nil {
 			return fmt.Errorf("failed to create config directory: %s", err.Error())
 		}
 	}
@@ -90,7 +112,7 @@ func (m *Manager) Save(cfg Config) error {
 		return fmt.Errorf("failed to encode config: %s", err.Error())
 	}
 
-	err = os.WriteFile(m.configPath, buffer.Bytes(), 0o644)
+	err = os.WriteFile(m.configPath, buffer.Bytes(), configWriteMode)
 	if err != nil {
 		return fmt.Errorf("failed to write config file: %s", err.Error())
 	}
@@ -137,8 +159,8 @@ func (cfg *Config) Validate() error {
 		errs = append(errs, "retry count cannot be negative")
 	}
 
-	if cfg.Backoff <= 0 {
-		errs = append(errs, "backoff must be greater than 0")
+	if cfg.Backoff.BaseDelay <= 0 {
+		errs = append(errs, "backoff base_delay must be greater than 0")
 	}
 
 	if len(errs) > 0 {

@@ -13,6 +13,9 @@ var logger *zap.SugaredLogger
 
 func InitLogger(filename string, verbose bool, debug bool) {
 	cfg := zap.NewDevelopmentConfig()
+	if !debug {
+		cfg.DisableStacktrace = true
+	}
 	if filename == "" {
 		cfg.OutputPaths = []string{"stderr"}
 		cfg.ErrorOutputPaths = []string{"stderr"}
