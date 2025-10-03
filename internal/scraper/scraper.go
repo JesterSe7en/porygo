@@ -6,17 +6,23 @@
 package scraper
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"math"
 	"math/rand"
+	"mime"
 	"net/http"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/JesterSe7en/scrapego/config"
 	"github.com/JesterSe7en/scrapego/internal/logger"
 	"github.com/JesterSe7en/scrapego/internal/storage"
 	wp "github.com/JesterSe7en/scrapego/internal/workerpool"
+	"github.com/PuerkitoBio/goquery"
 )
 
 type Scraper struct {
@@ -104,33 +110,26 @@ func (s *Scraper) performScrapeWithRetries(url string) wp.Result {
 
 // scrape performs the actual HTTP request and returns the result
 func (s *Scraper) scrape(url string) wp.Result {
-	// cancel here allows us to gracefully clean up and stop the request if in the event
-	// the user force quits e.g. ctrl-c
 	ctx, cancel := context.WithTimeout(context.Background(), s.cfg.Timeout)
 	defer cancel()
 
 	start := time.Now()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return wp.Result{
-			Value: nil,
-			Err:   err,
-		}
+		return wp.Result{Value: nil, Err: err}
 	}
 
-	// Set the User-Agent header to mimic a browser request
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3")
 
-	// Execute the request
 	res, err := s.client.Do(req)
 	if err != nil {
 		return wp.Result{Value: nil, Err: err}
 	}
-	finished := time.Now()
-	elapsed := finished.Sub(start)
 	defer res.Body.Close()
 
-	// Reference: https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status#server_error_responses
+	finished := time.Now()
+	elapsed := finished.Sub(start)
+
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
 		return wp.Result{Value: nil, Err: fmt.Errorf("request failed with status code: %d", res.StatusCode)}
 	}
@@ -145,36 +144,112 @@ func (s *Scraper) scrape(url string) wp.Result {
 		Timestamp:    finished,
 	}
 
-	// and css selectors is given
-	if data.ContentType == "text/html" && len(s.cfg.SelectorsConfig.Select) > 0 {
-		// use the css selectors to scrape data from the HTML content
-		extractBySelector(res, &data, s.cfg.SelectorsConfig.Select)
+	body, readErr := io.ReadAll(res.Body)
+	if readErr != nil {
+		return wp.Result{Value: nil, Err: readErr}
 	}
 
-	// if regex used, search the HTML content that was scrapped via CSS selectors
-	if data.ContentType == "text/html" && len(s.cfg.SelectorsConfig.Pattern) > 0 {
-		// use the regex patterns to scrape data from the HTML content
-		filterByRegex(res, &data, s.cfg.SelectorsConfig.Pattern)
+	if err := s.processBody(&data, body); err != nil {
+		return wp.Result{Value: nil, Err: err}
 	}
 
-	return wp.Result{
-		Value: data,
-		Err:   nil,
-	}
+	return wp.Result{Value: data, Err: nil}
 }
 
-func extractBySelector(res *http.Response, data *ScrapedData, regex []string) {
-	if res == nil || len(regex) == 0 {
-		return
+func (s *Scraper) processBody(data *ScrapedData, body []byte) error {
+	selectors := s.cfg.SelectorsConfig.Select
+	patterns := s.cfg.SelectorsConfig.Pattern
+	textsToFilter := []string{string(body)}
+
+	// Pass 1: CSS Selector Extraction
+	if len(selectors) > 0 {
+		mediaType, _, err := mime.ParseMediaType(data.ContentType)
+		if err != nil {
+			return fmt.Errorf("cannot parse content type: %w", err)
+		}
+		if mediaType != "text/html" {
+			return fmt.Errorf("CSS selectors require HTML, got %s", mediaType)
+		}
+
+		var extractedTexts []string
+		data.Extracted, extractedTexts = s.applySelectors(body, selectors)
+		textsToFilter = extractedTexts
 	}
-	panic("unimplemented")
+
+	// Pass 2: Regex Filtering
+	if len(patterns) > 0 {
+		data.Matches = s.applyRegexPatterns(textsToFilter, patterns)
+	}
+
+	return nil
 }
 
-func filterByRegex(res *http.Response, data *ScrapedData, selectors []string) {
-	if res == nil || len(selectors) == 0 {
-		return
+// applySelectors runs all CSS selectors against the document body.
+// It returns a map of results keyed by selector and a flat slice of all text found,
+// which serves as input for the regex pass.
+func (s *Scraper) applySelectors(body []byte, selectors []string) (map[string][]string, []string) {
+	doc, err := goquery.NewDocumentFromReader(io.NopCloser(bytes.NewReader(body)))
+	if err != nil {
+		s.log.Error("Cannot create DOM document from response body: %v", err)
+		return nil, nil
 	}
-	panic("unimplemented")
+
+	results := make(map[string][]string)
+	var allTexts []string
+
+	for _, selector := range selectors {
+		var currentSelectorResults []string
+
+		parts := strings.SplitN(selector, "@", 2)
+		cssSelector := parts[0] // "a"
+		attrName := ""
+		if len(parts) == 2 {
+			attrName = parts[1] // "href"
+		}
+
+		doc.Find(cssSelector).Each(func(i int, selection *goquery.Selection) {
+			var value string
+			if attrName != "" {
+				if v, ok := selection.Attr(attrName); ok {
+					value = v
+				}
+			} else {
+				value = strings.TrimSpace(selection.Text())
+			}
+
+			currentSelectorResults = append(currentSelectorResults, value)
+		})
+		results[selector] = currentSelectorResults
+		allTexts = append(allTexts, currentSelectorResults...)
+	}
+
+	return results, allTexts
+}
+
+// applyRegexPatterns runs all regex patterns against a slice of texts.
+// The texts can be the entire body or snippets extracted by CSS selectors.
+func (s *Scraper) applyRegexPatterns(texts []string, patterns []string) map[string][]string {
+	results := make(map[string][]string)
+
+	for _, pattern := range patterns {
+		re, err := regexp.Compile(pattern)
+		if err != nil {
+			s.log.Warn("Invalid regex pattern '%s', skipping: %v", pattern, err)
+			continue
+		}
+
+		var currentPatternResults []string
+		for _, text := range texts {
+			// -1 means no limit on the number of matches
+			matches := re.FindAllString(text, -1)
+			if matches != nil {
+				currentPatternResults = append(currentPatternResults, matches...)
+			}
+		}
+		results[pattern] = currentPatternResults
+	}
+
+	return results
 }
 
 // calculateBackoffDelay calculates the delay for exponential backoff with optional jitter
