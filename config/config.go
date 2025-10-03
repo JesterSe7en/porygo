@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/BurntSushi/toml"
@@ -37,10 +38,8 @@ type SelectorsConfig struct {
 
 // Config holds all configuration options for the scrapego tool
 type Config struct {
-	Input           string          `toml:"input"`       // input file for the list of URLs
 	Concurrency     int             `toml:"concurrency"` // number of concurrent requests
 	Timeout         time.Duration   `toml:"timeout"`     // timeout for each request
-	Output          string          `toml:"output"`      // output file for the scraped data
 	Format          string          `toml:"format"`      // output format for the scraped data
 	Retry           int             `toml:"retry"`       // number of retries for failed requests
 	Backoff         BackoffConfig   `toml:"backoff"`     // exponential backoff configuration
@@ -69,7 +68,7 @@ func Defaults() Config {
 	return Config{
 		Concurrency: 5,
 		Timeout:     10 * time.Second,
-		Output:      "JSON",
+		Format:      "json",
 		Retry:       3,
 		Backoff: BackoffConfig{
 			BaseDelay: 1 * time.Second,
@@ -162,8 +161,9 @@ func (cfg *Config) Validate() error {
 		errs = append(errs, "timeout must be greater than 0")
 	}
 
-	if cfg.Output != "JSON" && cfg.Output != "CSV" {
-		errs = append(errs, "output must be either 'JSON' or 'CSV'")
+	format := strings.ToLower(cfg.Format)
+	if format != "json" && format != "text" {
+		errs = append(errs, "format must be either 'json' or 'text'")
 	}
 
 	if cfg.Retry < 0 {
@@ -175,7 +175,7 @@ func (cfg *Config) Validate() error {
 	}
 
 	if len(errs) > 0 {
-		return errors.New("configuration validation failed: " + fmt.Sprintf("%v", errs))
+		return errors.New("configuration validation failed: " + strings.Join(errs, ", "))
 	}
 
 	return nil
