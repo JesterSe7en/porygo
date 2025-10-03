@@ -74,7 +74,7 @@ func NewBoltCache() (CacheStorage, error) {
 	}
 
 	db, err := bbolt.Open(pathDB, cacheFileMode, &bbolt.Options{
-		Timeout: 10 * time.Second,
+		Timeout: 1 * time.Second,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to open BoltDB at %s: %w", pathDB, err)
