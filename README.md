@@ -134,7 +134,7 @@ scrapego/
 
 ### Immediate Priority (Production Readiness)
 - [ ] **Database Abstraction Layer**: Interface-based storage for better testability
-- [ ] **Structured Output Formats**: JSON, CSV, XML with schema validation
+- [ ] **Structured Output Formats**: JSON
 - [ ] **Comprehensive Error Handling**: Detailed error types and recovery strategies
 - [ ] **Enhanced Testing Suite**: Unit tests, integration tests, and benchmarks
 
@@ -257,4 +257,16 @@ Cache entries: 2
 Total processing time: 1.2s
 ```
 
-*Future versions will support structured JSON/CSV output with extracted data, metadata, and comprehensive error reporting.*
+*Future versions will support structured JSON output with extracted data, metadata, and comprehensive error reporting.*
+
+
+1. Default Mode (Text Output):**
+    *   A selector/regex is **required**.
+    *   The tool prints *only* the extracted string values to `stdout`, typically one per line.
+    *   Example: `scrapego example.com --selector "h1" | head -n 1`
+
+2.  **JSON Mode (`--output json`):**
+    *   A selector/regex is **optional**.
+    *   The tool prints the *entire* `ScrapedData` struct, marshaled as a single JSON object, to `stdout`.
+    *   If no selector is given, the `extracted` and `matches` fields in the JSON will simply be empty. This is perfectly acceptable because the user explicitly asked for the full, structured data.
+    *   Example: `scrapego example.com --output json
