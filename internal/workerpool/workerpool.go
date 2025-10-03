@@ -3,7 +3,10 @@
 
 package workerpool
 
-import "sync"
+import (
+	"context"
+	"sync"
+)
 
 type WorkerPool struct {
 	jobs    chan Job
@@ -15,25 +18,45 @@ func New(workerCount int, bufferSize int) *WorkerPool {
 	return &WorkerPool{
 		jobs:    make(chan Job, bufferSize),
 		results: make(chan Result, bufferSize),
-		// WaitGroup not needed as it is initialized to its zero value - aka ready to use
 	}
 }
 
-func (wp *WorkerPool) Submit(job Job) {
-	wp.jobs <- job
+// Submit adds a job to the pool, but will not block indefinitely.
+// It returns an error if the context is canceled before the job can be submitted.
+func (wp *WorkerPool) Submit(ctx context.Context, job Job) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case wp.jobs <- job:
+		return nil
+	}
 }
 
-func (wp *WorkerPool) Run(workerCount int) {
+// Run starts the workers. It now accepts a context to enable graceful shutdown.
+func (wp *WorkerPool) Run(ctx context.Context, workerCount int) {
+	wp.wg.Add(workerCount)
 	for range workerCount {
-		// WaitGroup.Go only available in Go >v1.25
-		wp.wg.Go(func() {
-			for job := range wp.jobs {
-				wp.results <- job()
+		go func() {
+			defer wp.wg.Done()
+			for {
+				// essentially checking if either a cancel was requested
+				// or the job was closed either due to finishing or being canceled
+				select {
+				case <-ctx.Done():
+					return
+				case job, ok := <-wp.jobs:
+					if !ok {
+						return
+					}
+					wp.results <- job()
+				}
 			}
-		})
+		}()
 	}
 }
 
+// Close waits for all jobs to be processed and then closes the results channel.
+// It should be called after all jobs have been submitted.
 func (wp *WorkerPool) Close() {
 	close(wp.jobs)
 	wp.wg.Wait()
