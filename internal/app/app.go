@@ -2,11 +2,11 @@ package app
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
+	"os"
 
 	"github.com/JesterSe7en/scrapego/config"
 	"github.com/JesterSe7en/scrapego/internal/logger"
+	"github.com/JesterSe7en/scrapego/internal/presenter"
 	"github.com/JesterSe7en/scrapego/internal/scraper"
 	"github.com/JesterSe7en/scrapego/internal/storage"
 
@@ -14,9 +14,10 @@ import (
 )
 
 type App struct {
-	log   *logger.Logger
-	cfg   *config.Config
-	cache storage.CacheStorage
+	log       *logger.Logger
+	cfg       *config.Config
+	presenter presenter.Presenter
+	cache     storage.CacheStorage
 }
 
 func New(log *logger.Logger, cfg *config.Config) (*App, error) {
@@ -27,42 +28,56 @@ func New(log *logger.Logger, cfg *config.Config) (*App, error) {
 		return nil, err
 	}
 
+	var p presenter.Presenter
+	if cfg.Format == "json" {
+		p = presenter.NewJSONPresenter(os.Stdout)
+	} else {
+		p = presenter.NewTextPresenter(os.Stdout)
+	}
+
 	return &App{
-		log:   log,
-		cfg:   cfg,
-		cache: cache,
+		log:       log,
+		cfg:       cfg,
+		presenter: p,
+		cache:     cache,
 	}, nil
 }
 
 func (a *App) Run(ctx context.Context, urls []string) error {
-
 	// create scraper client
 	scraperClient := scraper.New(a.cfg, a.log, a.cache)
-	// loop through
 
+	// startup worker pool
 	pool := wp.New(a.cfg.Concurrency, a.cfg.Concurrency)
-	pool.Run(a.cfg.Concurrency)
+	pool.Run(ctx, a.cfg.Concurrency)
 
-	for _, url := range urls {
-		pool.Submit(func() wp.Result {
-			return scraperClient.ScrapeWithRetry(url)
-		})
-	}
+	// create jobs for worker pool
+	go func() {
+		defer pool.Close()
+		for _, url := range urls {
+			scrapeURL := url
+			job := func() wp.Result {
+				return scraperClient.ScrapeWithRetry(scrapeURL)
+			}
 
-	pool.Close()
+			if err := pool.Submit(ctx, job); err != nil {
+				a.log.Warn("Shutting down job submission: %v", err)
+				return
+			}
+		}
+	}()
 
+	// Process results as they come in
 	for res := range pool.Results() {
 		if res.Err != nil {
 			a.log.Error("Failed to get response: %s", res.Err.Error())
 			continue
 		}
 
-		// put the results into stdout
-		b, err := json.MarshalIndent(res, "", "  ")
-		if err != nil {
-			fmt.Println("error:", err)
+		if err := a.presenter.Write(res.Value); err != nil {
+			a.log.Error("Failed to write output: %v", err)
 		}
-		fmt.Println(string(b))
 	}
+
 	return nil
 }
