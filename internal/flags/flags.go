@@ -16,7 +16,7 @@ const (
 	FlagRetryDelay  = "retry-delay"  // delay duration between retries
 	FlagRetryJitter = "retry-jitter" // enable jitter for retry delays
 	FlagBackoff     = "backoff"      // backoff duration between retries
-	FlagForce       = "force"        // force operation without confirmation
+	FlagForce       = "force"        // ignore cache and scrape fresh data
 
 	// Scraper flags
 	FlagSelect  = "select"  // CSS selectors

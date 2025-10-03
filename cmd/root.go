@@ -57,7 +57,6 @@ Output can be saved in JSON or CSV format, and verbose logging is available for 
 			return cmd.Help()
 		}
 
-		// func New(log *zap.Logger, cfg *config.Config, storage storage.CacheStorage) *App {
 		app, err := app.New(&log, &cfg)
 		if err != nil {
 			return err

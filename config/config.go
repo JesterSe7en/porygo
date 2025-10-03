@@ -31,44 +31,40 @@ type BackoffConfig struct {
 }
 
 type SelectorsConfig struct {
-	Select  []string `toml:"select"`
-	Pattern []string `toml:"pattern"`
+	Select  []string `toml:"select"`  // css selectors
+	Pattern []string `toml:"pattern"` // regex patterns
 }
 
 // Config holds all configuration options for the scrapego tool
 type Config struct {
-	Input           string          `toml:"input"`
-	Concurrency     int             `toml:"concurrency"`
-	Timeout         time.Duration   `toml:"timeout"`
-	Output          string          `toml:"output"`
-	Format          string          `toml:"format"`
-	Retry           int             `toml:"retry"`
-	Backoff         BackoffConfig   `toml:"backoff"`
-	SelectorsConfig SelectorsConfig `toml:"selectors"`
-	Database        Database        `toml:"database"`
-	Force           bool            `toml:"force"`
-	Quiet           bool            `toml:"quiet"`
-	Headers         bool            `toml:"headers"`
+	Input           string          `toml:"input"`       // input file for the list of URLs
+	Concurrency     int             `toml:"concurrency"` // number of concurrent requests
+	Timeout         time.Duration   `toml:"timeout"`     // timeout for each request
+	Output          string          `toml:"output"`      // output file for the scraped data
+	Format          string          `toml:"format"`      // output format for the scraped data
+	Retry           int             `toml:"retry"`       // number of retries for failed requests
+	Backoff         BackoffConfig   `toml:"backoff"`     // exponential backoff configuration
+	SelectorsConfig SelectorsConfig `toml:"selectors"`   // css/regex selectors configuration
+	Database        Database        `toml:"database"`    // database configuration
+	Force           bool            `toml:"force"`       // force scraping even if data exists
+	Quiet           bool            `toml:"quiet"`       // suppress output, only show scrapped data
+	Headers         bool            `toml:"headers"`     // include headers in output
 }
 
-// Manager handles configuration loading, merging, and saving
 type Manager struct {
 	configPath string
 }
 
-// NewManager creates a new configuration manager
 func NewManager(configPath string) *Manager {
 	return &Manager{
 		configPath: configPath,
 	}
 }
 
-// DefaultManager creates a configuration manager with the default config path
 func DefaultManager() *Manager {
 	return NewManager("config.toml")
 }
 
-// Defaults returns a Config struct with default values
 func Defaults() Config {
 	return Config{
 		Concurrency: 5,

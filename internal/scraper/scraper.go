@@ -39,23 +39,30 @@ func New(cfg *config.Config, log *logger.Logger, cache storage.CacheStorage) *Sc
 
 // ScrapeWithRetry is the main public function that orchestrates scraping with caching and retry logic
 func (s *Scraper) ScrapeWithRetry(url string) wp.Result {
-	if cachedResult := s.checkCache(url); cachedResult != nil {
-		return *cachedResult
+	if !s.cfg.Force {
+		if cached := s.checkCache(url); cached != nil {
+			return *cached
+		}
 	}
 
 	result := s.performScrapeWithRetries(url)
 
 	if result.Err != nil {
 		s.log.Error("Failed to scrape %s: %v", url, result.Err)
-	} else {
-		var data []byte
-		switch v := result.Value.(type) {
-		case []byte:
-			data = v
-		case string:
-			data = []byte(v)
-		}
+		return result
+	}
 
+	var data []byte
+	switch v := result.Value.(type) {
+	case []byte:
+		data = v
+	case string:
+		data = []byte(v)
+	default:
+		s.log.Warn("Unsupported result type for %s: %T", url, v)
+	}
+
+	if len(data) > 0 {
 		s.storeCacheResult(url, data)
 	}
 
@@ -156,15 +163,15 @@ func (s *Scraper) scrape(url string) wp.Result {
 	}
 }
 
-func filterByRegex(res *http.Response, data *ScrapedData, selectors []string) {
-	if res == nil || len(selectors) == 0 {
+func extractBySelector(res *http.Response, data *ScrapedData, regex []string) {
+	if res == nil || len(regex) == 0 {
 		return
 	}
 	panic("unimplemented")
 }
 
-func extractBySelector(res *http.Response, data *ScrapedData, regex []string) {
-	if res == nil || len(regex) == 0 {
+func filterByRegex(res *http.Response, data *ScrapedData, selectors []string) {
+	if res == nil || len(selectors) == 0 {
 		return
 	}
 	panic("unimplemented")
