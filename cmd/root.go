@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"os/signal"
+	"strings"
 
 	cacheCmd "github.com/JesterSe7en/scrapego/cmd/cache"
 	configCmd "github.com/JesterSe7en/scrapego/cmd/config"
@@ -31,6 +33,10 @@ Supports rate limiting, retries, and caching of results to avoid redundant reque
 Output can be saved in JSON or CSV format, and verbose logging is available for progress tracking.`,
 	Args: cobra.ArbitraryArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
+
+		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+		defer stop()
+
 		// RunE will only grab flags and parse them into config; this includes list of URLs
 		verbose, _ := cmd.PersistentFlags().GetBool(flags.FlagVerbose)
 		filename, _ := cmd.PersistentFlags().GetString(flags.FlagLog)
@@ -62,7 +68,7 @@ Output can be saved in JSON or CSV format, and verbose logging is available for 
 			return err
 		}
 
-		return app.Run(context.Background(), urls)
+		return app.Run(ctx, urls)
 	},
 }
 
@@ -100,7 +106,7 @@ func init() {
 	// scraper flags
 	rootCmd.Flags().StringSliceP(flags.FlagSelect, "s", []string{}, "CSS selectors to extract")
 	rootCmd.Flags().StringSliceP(flags.FlagPattern, "p", []string{}, "regex patterns to match")
-	rootCmd.Flags().StringP(flags.FlagFormat, "o", "json", "output format (json|csv|plain)")
+	rootCmd.Flags().StringP(flags.FlagFormat, "o", "json", "output format (json|plain)")
 	rootCmd.Flags().BoolP(flags.FlagQuiet, "q", false, "only output extracted data")
 	rootCmd.Flags().BoolP(flags.FlagHeaders, "H", false, "include response headers")
 
@@ -166,7 +172,8 @@ func mergeCLIFlags(cmd *cobra.Command, cfg config.Config) config.Config {
 		cfg.SelectorsConfig.Pattern, _ = cmd.Flags().GetStringSlice(flags.FlagPattern)
 	}
 	if cmd.Flags().Changed(flags.FlagFormat) {
-		cfg.Format, _ = cmd.Flags().GetString(flags.FlagFormat)
+		outputFormat, _ := cmd.Flags().GetString(flags.FlagFormat)
+		cfg.Format = strings.ToLower(outputFormat)
 	}
 	if cmd.Flags().Changed(flags.FlagQuiet) {
 		cfg.Quiet, _ = cmd.Flags().GetBool(flags.FlagQuiet)
