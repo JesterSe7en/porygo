@@ -68,8 +68,13 @@ func NewBoltCache() (CacheStorage, error) {
 		return nil, fmt.Errorf("cannot get cache location: %w", err)
 	}
 
+	// Ensure the directory exists before opening the database.
+	if err := os.MkdirAll(filepath.Dir(pathDB), 0o750); err != nil {
+		return nil, fmt.Errorf("failed to create cache directory: %w", err)
+	}
+
 	db, err := bbolt.Open(pathDB, cacheFileMode, &bbolt.Options{
-		Timeout: 1 * time.Second,
+		Timeout: 10 * time.Second,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to open BoltDB at %s: %w", pathDB, err)
