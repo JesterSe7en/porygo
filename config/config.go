@@ -30,16 +30,25 @@ type BackoffConfig struct {
 	Jitter    bool          `toml:"jitter"`     // Whether to add jitter (default: true)
 }
 
+type SelectorsConfig struct {
+	Select  []string `toml:"select"`
+	Pattern []string `toml:"pattern"`
+}
+
 // Config holds all configuration options for the scrapego tool
 type Config struct {
-	Input       string        `toml:"input"`
-	Concurrency int           `toml:"concurrency"`
-	Timeout     time.Duration `toml:"timeout"`
-	Output      string        `toml:"output"`
-	Retry       int           `toml:"retry"`
-	Backoff     BackoffConfig `toml:"backoff"`
-	Database    Database      `toml:"database"`
-	Force       bool          `toml:"force"`
+	Input           string          `toml:"input"`
+	Concurrency     int             `toml:"concurrency"`
+	Timeout         time.Duration   `toml:"timeout"`
+	Output          string          `toml:"output"`
+	Format          string          `toml:"format"`
+	Retry           int             `toml:"retry"`
+	Backoff         BackoffConfig   `toml:"backoff"`
+	SelectorsConfig SelectorsConfig `toml:"selectors"`
+	Database        Database        `toml:"database"`
+	Force           bool            `toml:"force"`
+	Quiet           bool            `toml:"quiet"`
+	Headers         bool            `toml:"headers"`
 }
 
 // Manager handles configuration loading, merging, and saving
@@ -69,6 +78,12 @@ func Defaults() Config {
 		Backoff: BackoffConfig{
 			BaseDelay: 1 * time.Second,
 			Jitter:    true,
+		},
+		Quiet:   false,
+		Headers: false,
+		SelectorsConfig: SelectorsConfig{
+			Select:  []string{},
+			Pattern: []string{},
 		},
 		Force: false,
 		Database: Database{
