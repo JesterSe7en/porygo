@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"github.com/JesterSe7en/scrapego/config"
-	"github.com/JesterSe7en/scrapego/internal/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -36,8 +35,6 @@ Examples:
 			configPath = args[0]
 		}
 
-		logger.Info("initializing %s with default values", configPath)
-
 		manager := config.NewManager(configPath)
 
 		err := manager.InitDefaults()
@@ -46,7 +43,6 @@ Examples:
 			return
 		}
 
-		logger.Info("successfully created %s with default settings", configPath)
 	},
 }
 

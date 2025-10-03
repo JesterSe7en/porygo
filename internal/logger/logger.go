@@ -6,12 +6,16 @@
 package logger
 
 import (
+	"fmt"
+
 	"go.uber.org/zap"
 )
 
-var logger *zap.SugaredLogger
+type Logger struct {
+	logger *zap.SugaredLogger
+}
 
-func InitLogger(filename string, verbose bool, debug bool) {
+func New(filename string, debug bool, verbose bool) (Logger, error) {
 	cfg := zap.NewDevelopmentConfig()
 	if !debug {
 		cfg.DisableStacktrace = true
@@ -38,28 +42,30 @@ func InitLogger(filename string, verbose bool, debug bool) {
 	var err error
 	l, err := cfg.Build()
 	if err != nil {
-		panic("failed to initialize logger " + err.Error())
+		return Logger{}, fmt.Errorf("failed to initalize logger: %v", err)
 	}
 
-	logger = l.Sugar()
+	return Logger{
+		logger: l.Sugar(),
+	}, nil
 }
 
-func Info(msg string, args ...any) {
-	logger.Infof(msg, args...)
+func (l *Logger) Info(msg string, args ...any) {
+	l.logger.Infof(msg, args...)
 }
 
-func Warn(msg string, args ...any) {
-	logger.Warnf(msg, args...)
+func (l *Logger) Warn(msg string, args ...any) {
+	l.logger.Warnf(msg, args...)
 }
 
-func Error(msg string, args ...any) {
-	logger.Errorf(msg, args...)
+func (l *Logger) Error(msg string, args ...any) {
+	l.logger.Errorf(msg, args...)
 }
 
-func Debug(msg string, args ...any) {
-	logger.Debugf(msg, args...)
+func (l *Logger) Debug(msg string, args ...any) {
+	l.logger.Debugf(msg, args...)
 }
 
-func Sync() {
-	_ = logger.Sync()
+func (l *Logger) Sync() {
+	_ = l.logger.Sync()
 }

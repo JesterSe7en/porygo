@@ -6,13 +6,22 @@
 package flags
 
 const (
-	FlagLog         = "log"         // path to log file
-	FlagDebug       = "debug"       // enable debug mode
-	FlagConfig      = "config"      // path to config file
-	FlagConcurrency = "concurrency" // number of concurrent requests
-	FlagTimeout     = "timeout"     // timeout duration for requests
-	FlagVerbose     = "verbose"     // enable verbose mode
-	FlagRetry       = "retry"       // number of retries for failed requests
-	FlagBackoff     = "backoff"     // backoff duration between retries
-	FlagForce       = "force"       // force operation without confirmation
+	FlagLog         = "log"          // path to log file
+	FlagDebug       = "debug"        // enable debug mode
+	FlagConfig      = "config"       // path to config file
+	FlagConcurrency = "concurrency"  // number of concurrent requests
+	FlagTimeout     = "timeout"      // timeout duration for requests
+	FlagVerbose     = "verbose"      // enable verbose mode
+	FlagRetry       = "retry"        // number of retries for failed requests
+	FlagRetryDelay  = "retry-delay"  // delay duration between retries
+	FlagRetryJitter = "retry-jitter" // enable jitter for retry delays
+	FlagBackoff     = "backoff"      // backoff duration between retries
+	FlagForce       = "force"        // force operation without confirmation
+
+	// Scraper flags
+	FlagSelect  = "select"  // CSS selectors
+	FlagPattern = "pattern" // regex FlagPattern
+	FlagFormat  = "format"  // output format json|csv|plain
+	FlagQuiet   = "quiet"   // only output extracted data
+	FlagHeaders = "headers" // include response headers
 )

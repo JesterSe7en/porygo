@@ -10,7 +10,7 @@ Scrapego is a high-performance, production-ready CLI tool for concurrent web scr
 ### Current Implementation
 - **Concurrent Scraping**: Worker pool pattern with configurable concurrency
 - **Intelligent Caching**: bbolt-based caching with TTL and cross-platform storage
-- **Retry Logic**: Exponential backoff with configurable retry attempts
+- **Retry Logic**: Exponential backoff with configurable retry attempts - jitter
 - **Configuration Management**: TOML files + CLI flags with precedence handling
 - **Structured Logging**: Production-ready logging with zap
 - **Cross-Platform**: Proper cache directory handling for Windows, macOS, and Linux

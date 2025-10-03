@@ -7,6 +7,7 @@ package cmd
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"net/url"
 	"os"
@@ -15,11 +16,9 @@ import (
 	configCmd "github.com/JesterSe7en/scrapego/cmd/config"
 	"github.com/JesterSe7en/scrapego/config"
 
+	"github.com/JesterSe7en/scrapego/internal/app"
 	"github.com/JesterSe7en/scrapego/internal/flags"
 	"github.com/JesterSe7en/scrapego/internal/logger"
-	"github.com/JesterSe7en/scrapego/internal/scraper"
-	"github.com/JesterSe7en/scrapego/internal/storage"
-	wp "github.com/JesterSe7en/scrapego/internal/workerpool"
 	"github.com/spf13/cobra"
 )
 
@@ -32,21 +31,22 @@ Supports rate limiting, retries, and caching of results to avoid redundant reque
 Output can be saved in JSON or CSV format, and verbose logging is available for progress tracking.`,
 	Args: cobra.ArbitraryArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// setupLogging(cmd)
-		// defer logger.Sync()
+		// RunE will only grab flags and parse them into config; this includes list of URLs
+		verbose, _ := cmd.PersistentFlags().GetBool(flags.FlagVerbose)
+		filename, _ := cmd.PersistentFlags().GetString(flags.FlagLog)
+		debug, _ := cmd.PersistentFlags().GetBool(flags.FlagDebug)
 
-		manager := storage.GetCacheManager()
-		cache, err := manager.GetCache()
+		log, err := logger.New(filename, debug, verbose)
 		if err != nil {
 			return err
 		}
-		defer manager.Close()
+		defer log.Sync()
 
 		cfg, err := setupConfig(cmd)
+		log.Debug("scraping with config : %+v", cfg)
 		if err != nil {
 			return err
 		}
-		logger.Debug("scraping with config : %+v", cfg)
 
 		urls, err := getURLs(args)
 		if err != nil {
@@ -57,17 +57,19 @@ Output can be saved in JSON or CSV format, and verbose logging is available for 
 			return cmd.Help()
 		}
 
-		processURLs(cfg, urls, cache)
+		// func New(log *zap.Logger, cfg *config.Config, storage storage.CacheStorage) *App {
+		app, err := app.New(&log, &cfg)
+		if err != nil {
+			return err
+		}
 
-		return nil
+		return app.Run(context.Background(), urls)
 	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	setupLogging(rootCmd)
-	defer logger.Sync()
 	err := rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
@@ -92,17 +94,17 @@ func init() {
 	rootCmd.Flags().IntP(flags.FlagConcurrency, "c", defaults.Concurrency, "number of workers")
 	rootCmd.Flags().DurationP(flags.FlagTimeout, "t", defaults.Timeout, "request timeout per URL")
 	rootCmd.Flags().IntP(flags.FlagRetry, "r", defaults.Retry, "number of retries per URL on failure")
-	rootCmd.Flags().Duration("retry-delay", defaults.Backoff.BaseDelay, "base delay between retries (exponential backoff applied)")
-	rootCmd.Flags().Bool("retry-jitter", defaults.Backoff.Jitter, "enable jitter for retry delays")
+	rootCmd.Flags().Duration(flags.FlagRetryDelay, defaults.Backoff.BaseDelay, "base delay between retries (exponential backoff applied)")
+	rootCmd.Flags().Bool(flags.FlagRetryJitter, defaults.Backoff.Jitter, "enable jitter for retry delays")
 	rootCmd.Flags().BoolP(flags.FlagForce, "f", defaults.Force, "ignore cache and scrape fresh data")
 
-}
+	// scraper flags
+	rootCmd.Flags().StringSliceP(flags.FlagSelect, "s", []string{}, "CSS selectors to extract")
+	rootCmd.Flags().StringSliceP(flags.FlagPattern, "p", []string{}, "regex patterns to match")
+	rootCmd.Flags().StringP(flags.FlagFormat, "o", "json", "output format (json|csv|plain)")
+	rootCmd.Flags().BoolP(flags.FlagQuiet, "q", false, "only output extracted data")
+	rootCmd.Flags().BoolP(flags.FlagHeaders, "H", false, "include response headers")
 
-func setupLogging(cmd *cobra.Command) {
-	verbose, _ := cmd.PersistentFlags().GetBool(flags.FlagVerbose)
-	filename, _ := cmd.PersistentFlags().GetString(flags.FlagLog)
-	debug, _ := cmd.PersistentFlags().GetBool(flags.FlagDebug)
-	logger.InitLogger(filename, verbose, debug)
 }
 
 func setupConfig(cmd *cobra.Command) (config.Config, error) {
@@ -117,7 +119,6 @@ func setupConfig(cmd *cobra.Command) (config.Config, error) {
 	// Load configuration with proper precedence
 	if configFile == "" {
 		cfg = manager.LoadDefaults()
-		logger.Info("Using default config values for scraping")
 	} else {
 		cfg, err = manager.LoadFromFile(configFile)
 		if err != nil {
@@ -148,11 +149,10 @@ func mergeCLIFlags(cmd *cobra.Command, cfg config.Config) config.Config {
 	if cmd.Flags().Changed(flags.FlagRetry) {
 		cfg.Retry, _ = cmd.Flags().GetInt(flags.FlagRetry)
 	}
-	if cmd.Flags().Changed("retry-delay") {
-		cfg.Backoff.BaseDelay, _ = cmd.Flags().GetDuration("retry-delay")
+	if cmd.Flags().Changed(flags.FlagRetryDelay) {
 	}
-	if cmd.Flags().Changed("retry-jitter") {
-		cfg.Backoff.Jitter, _ = cmd.Flags().GetBool("retry-jitter")
+	if cmd.Flags().Changed(flags.FlagRetryJitter) {
+		cfg.Backoff.Jitter, _ = cmd.Flags().GetBool(flags.FlagRetryJitter)
 	}
 	if cmd.Flags().Changed(flags.FlagForce) {
 		cfg.Force, _ = cmd.Flags().GetBool(flags.FlagForce)
@@ -205,29 +205,4 @@ func validateURLs(inputs []string) error {
 		}
 	}
 	return nil
-}
-
-func processURLs(cfg config.Config, urls []string, cache storage.CacheStorage) {
-	// For now, keep the buffer size same as worker count
-	// TODO: evaluate if making the buffer 2x or 3x is worth it
-	pool := wp.New(cfg.Concurrency, cfg.Concurrency)
-	pool.Run(cfg.Concurrency)
-
-	for _, url := range urls {
-		pool.Submit(func() wp.Result {
-			return scraper.ScrapeWithRetry(url, cfg.Retry, cfg.Timeout, cfg.Backoff, cfg.Database.Expiration, cache)
-		})
-	}
-
-	pool.Close()
-
-	for res := range pool.Results() {
-		if res.Err != nil {
-			logger.Error("Failed to get response: %s", res.Err.Error())
-			continue
-		}
-
-		// put the results into stdout
-		fmt.Println(res.Value)
-	}
 }
