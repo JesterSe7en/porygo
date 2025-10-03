@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/JesterSe7en/scrapego/config"
@@ -57,7 +58,11 @@ func (a *App) Run(ctx context.Context, urls []string) error {
 		}
 
 		// put the results into stdout
-		fmt.Println(res.Value)
+		b, err := json.MarshalIndent(res, "", "  ")
+		if err != nil {
+			fmt.Println("error:", err)
+		}
+		fmt.Println(string(b))
 	}
 	return nil
 }
