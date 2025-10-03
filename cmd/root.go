@@ -149,6 +149,7 @@ func mergeCLIFlags(cmd *cobra.Command, cfg config.Config) config.Config {
 		cfg.Retry, _ = cmd.Flags().GetInt(flags.FlagRetry)
 	}
 	if cmd.Flags().Changed(flags.FlagRetryDelay) {
+		cfg.Backoff.BaseDelay, _ = cmd.Flags().GetDuration(flags.FlagRetryDelay)
 	}
 	if cmd.Flags().Changed(flags.FlagRetryJitter) {
 		cfg.Backoff.Jitter, _ = cmd.Flags().GetBool(flags.FlagRetryJitter)
@@ -156,6 +157,24 @@ func mergeCLIFlags(cmd *cobra.Command, cfg config.Config) config.Config {
 	if cmd.Flags().Changed(flags.FlagForce) {
 		cfg.Force, _ = cmd.Flags().GetBool(flags.FlagForce)
 	}
+
+	// scraper flags
+	if cmd.Flags().Changed(flags.FlagSelect) {
+		cfg.SelectorsConfig.Select, _ = cmd.Flags().GetStringSlice(flags.FlagSelect)
+	}
+	if cmd.Flags().Changed(flags.FlagPattern) {
+		cfg.SelectorsConfig.Pattern, _ = cmd.Flags().GetStringSlice(flags.FlagPattern)
+	}
+	if cmd.Flags().Changed(flags.FlagFormat) {
+		cfg.Format, _ = cmd.Flags().GetString(flags.FlagFormat)
+	}
+	if cmd.Flags().Changed(flags.FlagQuiet) {
+		cfg.Quiet, _ = cmd.Flags().GetBool(flags.FlagQuiet)
+	}
+	if cmd.Flags().Changed(flags.FlagHeaders) {
+		cfg.Headers, _ = cmd.Flags().GetBool(flags.FlagHeaders)
+	}
+
 	return cfg
 }
 
