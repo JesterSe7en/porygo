@@ -1,4 +1,4 @@
-module github.com/JesterSe7en/scrapego
+module github.com/JesterSe7en/porygo
 
 go 1.25.0
 

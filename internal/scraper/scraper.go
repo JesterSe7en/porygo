@@ -18,10 +18,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/JesterSe7en/scrapego/config"
-	"github.com/JesterSe7en/scrapego/internal/logger"
-	"github.com/JesterSe7en/scrapego/internal/storage"
-	wp "github.com/JesterSe7en/scrapego/internal/workerpool"
+	"github.com/JesterSe7en/porygo/config"
+	"github.com/JesterSe7en/porygo/internal/logger"
+	"github.com/JesterSe7en/porygo/internal/storage"
+	wp "github.com/JesterSe7en/porygo/internal/workerpool"
 	"github.com/PuerkitoBio/goquery"
 )
 

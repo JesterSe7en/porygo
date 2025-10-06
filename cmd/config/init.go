@@ -6,7 +6,7 @@ package config
 import (
 	"fmt"
 
-	"github.com/JesterSe7en/scrapego/config"
+	"github.com/JesterSe7en/porygo/config"
 	"github.com/spf13/cobra"
 )
 
@@ -23,10 +23,10 @@ Use this command if you want to generate a fresh configuration file. You can the
 manually or override its values using command-line flags.
 
 Examples:
-  scrapego config init
+  porygo config init
   # creates config.toml with default values
 
-  scrapego config init my-config.toml
+  porygo config init my-config.toml
   # creates my-config.toml with default values`,
 	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {

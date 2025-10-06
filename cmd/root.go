@@ -14,19 +14,19 @@ import (
 	"os/signal"
 	"strings"
 
-	cacheCmd "github.com/JesterSe7en/scrapego/cmd/cache"
-	configCmd "github.com/JesterSe7en/scrapego/cmd/config"
-	"github.com/JesterSe7en/scrapego/config"
+	cacheCmd "github.com/JesterSe7en/porygo/cmd/cache"
+	configCmd "github.com/JesterSe7en/porygo/cmd/config"
+	"github.com/JesterSe7en/porygo/config"
 
-	"github.com/JesterSe7en/scrapego/internal/app"
-	"github.com/JesterSe7en/scrapego/internal/flags"
-	"github.com/JesterSe7en/scrapego/internal/logger"
+	"github.com/JesterSe7en/porygo/internal/app"
+	"github.com/JesterSe7en/porygo/internal/flags"
+	"github.com/JesterSe7en/porygo/internal/logger"
 	"github.com/spf13/cobra"
 )
 
 // RootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "scrapego [urls...]",
+	Use:   "porygo [urls...]",
 	Short: "Scrape one or more URLs concurrently and save results",
 	Long: `Scrape web pages or APIs from a list of URLs, using a concurrent worker pool.
 Supports rate limiting, retries, and caching of results to avoid redundant requests.

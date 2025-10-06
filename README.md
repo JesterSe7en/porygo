@@ -1,12 +1,16 @@
-# Scrapego
+# Porygo
 
 [![Go Version](https://img.shields.io/badge/Go-1.25+-00ADD8?style=flat&logo=go)](https://golang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Go Report Card](https://goreportcard.com/badge/github.com/JesterSe7en/scrapego)](https://goreportcard.com/report/github.com/JesterSe7en/scrapego)
+[![Go Report Card](https://goreportcard.com/badge/github.com/JesterSe7en/porygo)](https://goreportcard.com/report/github.com/JesterSe7en/porygo)
 
 A high-performance, concurrent web scraper built in Go with intelligent caching, retry mechanisms, and flexible data extraction capabilities.
 
 > **Disclaimer:** This project is currently under active development. Features and command-line flags are subject to change.
+
+## What's in a name?
+
+The name "Porygo" is a tribute to a love for Pokémon and programming. It's a portmanteau of **Porygon**, the virtual Pokémon that exists and travels through cyberspace, and **Go**, the language this project is written in.
 
 ## Features
 
@@ -38,9 +42,9 @@ A high-performance, concurrent web scraper built in Go with intelligent caching,
 Clone the repository and build the binary:
 
 ```bash
-git clone https://github.com/JesterSe7en/scrapego.git
-cd scrapego
-go build -o scrapego .
+git clone https://github.com/JesterSe7en/porygo.git
+cd porygo
+go build -o porygo .
 ```
 
 ### Install from Source
@@ -48,7 +52,7 @@ go build -o scrapego .
 Install directly using `go install`:
 
 ```bash
-go install github.com/JesterSe7en/scrapego@latest
+go install github.com/JesterSe7en/porygo@latest
 ```
 
 ## Usage
@@ -59,13 +63,13 @@ Scrape URLs provided as command-line arguments. The tool can also accept URLs pi
 
 ```bash
 # Scrape a single URL
-./scrapego https://example.com
+./porygo https://example.com
 
 # Scrape multiple URLs
-./scrapego https://example.com https://golang.org
+./porygo https://example.com https://golang.org
 
 # Scrape URLs from a file
-cat list.txt | ./scrapego
+cat list.txt | ./porygo
 ```
 
 ### Data Extraction
@@ -74,21 +78,21 @@ Use CSS selectors (`-s`) or regex patterns (`-p`) to extract specific content.
 
 ```bash
 # Extract all h1 and h2 tags
-./scrapego -s "h1" -s "h2" https://example.com
+./porygo -s "h1" -s "h2" https://example.com
 
 # Extract email addresses using regex
-./scrapego -p "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" https://example.com
+./porygo -p "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" https://example.com
 
 # Output in plain text
-./scrapego -o plain https://example.com
+./porygo -o plain https://example.com
 ```
 
 ### Command-Line Flags
 
 ```
 Usage:
-  scrapego [urls...] [flags]
-  scrapego [command]
+  porygo [urls...] [flags]
+  porygo [command]
 
 Available Commands:
   cache       Manage cached scraping results
@@ -102,7 +106,7 @@ Flags:
   -f, --force                  ignore cache and scrape fresh data
   -o, --format string          output format (json|plain) (default "json")
   -H, --headers                include response headers
-  -h, --help                   help for scrapego
+  -h, --help                   help for porygo
   -l, --log string             file path to write logs
   -p, --pattern strings        regex patterns to match
   -q, --quiet                  only output extracted data
@@ -120,7 +124,7 @@ The `cache` command helps manage the local data store.
 
 ```bash
 # Clear all cached results
-./scrapego cache clear
+./porygo cache clear
 ```
 
 ### Configuration Management
@@ -129,12 +133,12 @@ The `config` command assists with the configuration file.
 
 ```bash
 # Create a default 'config.toml' file in the current directory
-./scrapego config init
+./porygo config init
 ```
 
 ## Configuration
 
-`scrapego` can be configured using a `config.toml` file.
+`porygo` can be configured using a `config.toml` file.
 
 ### Configuration Precedence
 
@@ -144,7 +148,7 @@ The `config` command assists with the configuration file.
 
 ### Example `config.toml`
 
-Run `scrapego config init` to generate a file with default values.
+Run `porygo config init` to generate a file with default values.
 
 ```toml
 # Default number of concurrent workers

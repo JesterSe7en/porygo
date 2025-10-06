@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Alexander Chan
 // SPDX-License-Identifier: MIT
 
-// Package config contains the key-value pairs that deal with how to use the scrapego tool
+// Package config contains the key-value pairs that deal with how to use the porygo tool
 package config
 
 import (
@@ -36,7 +36,7 @@ type SelectorsConfig struct {
 	Pattern []string `toml:"pattern"` // regex patterns
 }
 
-// Config holds all configuration options for the scrapego tool
+// Config holds all configuration options for the porygo tool
 type Config struct {
 	Concurrency     int             `toml:"concurrency"` // number of concurrent requests
 	Timeout         time.Duration   `toml:"timeout"`     // timeout for each request

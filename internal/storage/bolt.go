@@ -44,7 +44,7 @@ type boltCache struct {
 func getCachePath() (string, error) {
 	// Check for XDG_CACHE_HOME environment variable first
 	if xdgCache := os.Getenv("XDG_CACHE_HOME"); xdgCache != "" {
-		return filepath.Join(xdgCache, "scrapego", "cache.db"), nil
+		return filepath.Join(xdgCache, "porygo", "cache.db"), nil
 	}
 
 	home, err := os.UserHomeDir()
@@ -54,11 +54,11 @@ func getCachePath() (string, error) {
 
 	switch runtime.GOOS {
 	case "windows":
-		return filepath.Join(home, "AppData", "Local", "Scrapego", "cache.db"), nil
+		return filepath.Join(home, "AppData", "Local", "porygo", "cache.db"), nil
 	case "darwin":
-		return filepath.Join(home, "Library", "Caches", "scrapego", "cache.db"), nil
+		return filepath.Join(home, "Library", "Caches", "porygo", "cache.db"), nil
 	default: // Unix-like systems
-		return filepath.Join(home, ".cache", "scrapego", "cache.db"), nil
+		return filepath.Join(home, ".cache", "porygo", "cache.db"), nil
 	}
 }
 

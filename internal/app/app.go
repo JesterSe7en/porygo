@@ -4,13 +4,13 @@ import (
 	"context"
 	"os"
 
-	"github.com/JesterSe7en/scrapego/config"
-	"github.com/JesterSe7en/scrapego/internal/logger"
-	"github.com/JesterSe7en/scrapego/internal/presenter"
-	"github.com/JesterSe7en/scrapego/internal/scraper"
-	"github.com/JesterSe7en/scrapego/internal/storage"
+	"github.com/JesterSe7en/porygo/config"
+	"github.com/JesterSe7en/porygo/internal/logger"
+	"github.com/JesterSe7en/porygo/internal/presenter"
+	"github.com/JesterSe7en/porygo/internal/scraper"
+	"github.com/JesterSe7en/porygo/internal/storage"
 
-	wp "github.com/JesterSe7en/scrapego/internal/workerpool"
+	wp "github.com/JesterSe7en/porygo/internal/workerpool"
 )
 
 type App struct {

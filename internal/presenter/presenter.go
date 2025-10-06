@@ -7,7 +7,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/JesterSe7en/scrapego/internal/scraper"
+	"github.com/JesterSe7en/porygo/internal/scraper"
 )
 
 type Presenter interface {
