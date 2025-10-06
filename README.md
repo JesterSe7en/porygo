@@ -8,9 +8,9 @@ A high-performance, concurrent web scraper built in Go with intelligent caching,
 
 > **Disclaimer:** This project is currently under active development. Features and command-line flags are subject to change.
 
-## What's in a name?
+## Why Porygo
 
-The name "Porygo" is a tribute to a love for Pokémon and programming. It's a portmanteau of **Porygon**, the virtual Pokémon that exists and travels through cyberspace, and **Go**, the language this project is written in.
+The name "Porygo" is combination of my affinity towards Pokemon and the language this is written in. It's a combination of **Porygon**, the only (afaik) Pokémon that exists purely as programming code, and **Go**, the language this project is written in.
 
 ## Features
 
@@ -219,7 +219,3 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
-## Author
-
-**Alexander Chan** - [JesterSe7en](https://github.com/JesterSe7en)
