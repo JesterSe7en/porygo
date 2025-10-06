@@ -6,43 +6,36 @@
 
 A high-performance, concurrent web scraper built in Go with intelligent caching, retry mechanisms, and flexible data extraction capabilities.
 
+> **Disclaimer:** This project is currently under active development. Features and command-line flags are subject to change.
+
 ## Features
 
-- **Concurrent Processing**: Worker pool architecture with configurable concurrency levels
-- **Smart Retry Logic**: Exponential backoff with jitter for handling transient failures
-- **Intelligent Caching**: BBolt-based caching system to avoid redundant requests
-- **Flexible Data Extraction**: CSS selectors and regex pattern matching
-- **Multiple Output Formats**: JSON and plain text output options
-- **Configurable**: TOML configuration files with CLI flag overrides
-- **Structured Logging**: Comprehensive logging with Zap for debugging and monitoring
-- **Extensible Architecture**: Clean, modular design with interface-based components
+- **Concurrent Processing**: Employs a worker pool to manage and execute multiple scraping jobs simultaneously.
+- **Intelligent Caching**: Utilizes a BBolt database to cache responses, minimizing redundant network requests.
+- **Smart Retry Logic**: Implements exponential backoff with optional jitter to gracefully handle transient network errors.
+- **Flexible Data Extraction**: Supports data extraction using CSS selectors (via `goquery`) and regex patterns.
+- **Multiple Output Formats**: Presents scraped data in either JSON or plain text formats.
+- **Layered Configuration**: Settings can be specified via a `config.toml` file and overridden with command-line flags.
+- **Structured Logging**: Provides detailed operational insights using the `zap` logging library.
 
 ## Table of Contents
 
 - [Installation](#installation)
-- [Quick Start](#quick-start)
 - [Usage](#usage)
 - [Configuration](#configuration)
-- [Examples](#examples)
 - [Architecture](#architecture)
 - [Contributing](#contributing)
 - [License](#license)
 
 ## Installation
 
-### Pre-built Binaries
+### Prerequisites
 
-Download the latest release from the [releases page](https://github.com/JesterSe7en/scrapego/releases).
-
-### Install from Source
-
-Requires Go 1.25 or higher:
-
-```bash
-go install github.com/JesterSe7en/scrapego@latest
-```
+- Go 1.25 or higher.
 
 ### Build from Source
+
+Clone the repository and build the binary:
 
 ```bash
 git clone https://github.com/JesterSe7en/scrapego.git
@@ -50,46 +43,47 @@ cd scrapego
 go build -o scrapego .
 ```
 
-## Quick Start
+### Install from Source
 
-### Basic Usage
-
-Scrape URLs directly from command line:
+Install directly using `go install`:
 
 ```bash
-# Scrape single URL
-scrapego https://example.com
-
-# Scrape multiple URLs
-scrapego https://example.com https://golang.org https://github.com
-```
-
-### Using Stdin
-
-```bash
-# From a file
-cat urls.txt | scrapego
-
-# From command output
-echo "https://example.com" | scrapego
-```
-
-### Extract Specific Data
-
-```bash
-# Extract titles using CSS selectors
-scrapego -s "title" -s "h1" https://example.com
-
-# Match patterns with regex
-scrapego -p "email.*@.*\.com" https://example.com
-
-# Output in plain text format
-scrapego -o plain https://example.com
+go install github.com/JesterSe7en/scrapego@latest
 ```
 
 ## Usage
 
-### Command Line Options
+### Basic Scraping
+
+Scrape URLs provided as command-line arguments. The tool can also accept URLs piped from `stdin`.
+
+```bash
+# Scrape a single URL
+./scrapego https://example.com
+
+# Scrape multiple URLs
+./scrapego https://example.com https://golang.org
+
+# Scrape URLs from a file
+cat list.txt | ./scrapego
+```
+
+### Data Extraction
+
+Use CSS selectors (`-s`) or regex patterns (`-p`) to extract specific content.
+
+```bash
+# Extract all h1 and h2 tags
+./scrapego -s "h1" -s "h2" https://example.com
+
+# Extract email addresses using regex
+./scrapego -p "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" https://example.com
+
+# Output in plain text
+./scrapego -o plain https://example.com
+```
+
+### Command-Line Flags
 
 ```
 Usage:
@@ -122,201 +116,106 @@ Flags:
 
 ### Cache Management
 
+The `cache` command helps manage the local data store.
+
 ```bash
 # Clear all cached results
-scrapego cache clear
+./scrapego cache clear
 ```
 
 ### Configuration Management
 
-```bash
-# Initialize default config file
-scrapego config init
+The `config` command assists with the configuration file.
 
-# View current configuration
-scrapego config show
+```bash
+# Create a default 'config.toml' file in the current directory
+./scrapego config init
 ```
 
 ## Configuration
 
-### Configuration File
-
-Create a `config.toml` file in your working directory:
-
-```toml
-# Worker configuration
-concurrency = 10
-timeout = "30s"
-retry = 5
-force = false
-
-# Output configuration
-output = "json"
-
-# Retry configuration
-[backoff]
-  base_delay = "2s"
-  jitter = true
-
-# Cache configuration
-[database]
-  expiration = "24h"
-```
+`scrapego` can be configured using a `config.toml` file.
 
 ### Configuration Precedence
 
-1. **Command-line flags** (highest priority)
-2. **Configuration file**
-3. **Default values** (lowest priority)
+1.  **Command-line flags** (highest priority)
+2.  **Values in `config.toml`**
+3.  **Default values** (lowest priority)
 
-### Environment Variables
+### Example `config.toml`
 
-You can also use environment variables (useful for CI/CD):
+Run `scrapego config init` to generate a file with default values.
 
-```bash
-export SCRAPEGO_CONCURRENCY=10
-export SCRAPEGO_TIMEOUT=30s
-```
+```toml
+# Default number of concurrent workers
+concurrency = 5
+# Default timeout for each HTTP request
+timeout = "10s"
+# Default output format ("json" or "plain")
+format = "json"
+# Default number of retries for failed requests
+retry = 3
+# Force scraping and ignore existing cache
+force = false
+# Suppress logs and only show scraped data
+quiet = false
+# Include response headers in the output
+headers = false
 
-## Examples
+[backoff]
+  # Base delay for the first retry
+  base_delay = "1s"
+  # Enable or disable random jitter in retry delays
+  jitter = true
 
-### Basic Web Scraping
+[selectors]
+  # Default CSS selectors to apply
+  select = []
+  # Default regex patterns to apply
+  pattern = []
 
-```bash
-# Scrape with custom settings
-scrapego -c 10 -t 30s -r 5 https://example.com
-
-# Extract specific elements
-scrapego -s "title" -s ".main-content" -s "meta[name='description']" https://example.com
-
-# Match email addresses and phone numbers
-scrapego -p "\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b" \
-         -p "\b\d{3}-\d{3}-\d{4}\b" \
-         https://example.com
-```
-
-### Batch Processing
-
-```bash
-# Create a URL list file
-echo "https://example.com
-https://golang.org
-https://github.com" > urls.txt
-
-# Process with custom configuration
-scrapego -f urls.txt -c 20 -o plain --quiet
-```
-
-### Advanced Usage
-
-```bash
-# Scrape with headers included and verbose logging
-scrapego -H -v -l scrape.log https://api.example.com
-
-# Force fresh scraping (ignore cache) with custom retry settings
-scrapego -f --retry-delay 5s --retry-jitter=false https://example.com
-
-# Extract and format specific data
-scrapego -s "h1,h2,h3" -p "https?://[^\s]+" -o json https://news.example.com
-```
-
-### Integration Examples
-
-```bash
-# Use with jq for JSON processing
-scrapego https://api.example.com | jq '.data[] | select(.status == "active")'
-
-# Combine with other tools
-curl -s https://example.com/sitemap.xml | \
-  grep -oP 'https://[^<]+' | \
-  scrapego -c 50 -q
+[database]
+  # Duration for which cached items remain valid
+  expiration = "24h"
 ```
 
 ## Architecture
 
-Scrapego is built with a clean, modular architecture following Go best practices:
+The project follows a modular architecture to separate concerns, making it easier to maintain and extend.
 
 ```
-├── cmd/                    # Command-line interface
-│   ├── cache/             # Cache management commands
-│   ├── config/            # Configuration commands
-│   └── root.go            # Root command and CLI setup
-├── config/                # Configuration management
-├── internal/              # Internal packages
-│   ├── app/               # Main application logic
-│   ├── flags/             # CLI flag definitions
-│   ├── logger/            # Structured logging
-│   ├── presenter/         # Output formatting
-│   ├── scraper/           # Web scraping logic
-│   ├── storage/           # Caching and persistence
-│   └── workerpool/        # Concurrent worker management
-└── main.go                # Entry point
+├── cmd/                    # Command-line interface (Cobra)
+│   ├── cache/              # Cache management commands
+│   ├── config/             # Configuration commands
+│   └── root.go             # Root command and CLI setup
+├── config/                 # Configuration management (TOML)
+├── internal/               # Internal application logic
+│   ├── app/                # Core application wiring
+│   ├── flags/              # CLI flag definitions
+│   ├── logger/             # Structured logging (Zap)
+│   ├── presenter/          # Output formatting
+│   ├── scraper/            # Web scraping logic (Goquery)
+│   ├── storage/            # Caching and persistence (BBolt)
+│   └── workerpool/         # Concurrent worker management
+└── main.go                 # Application entry point
 ```
-
-### Key Design Patterns
-
-- **Worker Pool Pattern**: Manages concurrent scraping operations efficiently
-- **Interface-Based Design**: Enables easy testing and component swapping
-- **Configuration Precedence**: Clear hierarchy for configuration sources
-- **Separation of Concerns**: Each package has a single, well-defined responsibility
 
 ### Dependencies
 
-- **[Cobra](https://github.com/spf13/cobra)**: Powerful CLI framework
-- **[Zap](https://github.com/uber-go/zap)**: High-performance structured logging
+- **[Cobra](https://github.com/spf13/cobra)**: CLI framework
+- **[Zap](https://github.com/uber-go/zap)**: Structured logging
 - **[BBolt](https://github.com/etcd-io/bbolt)**: Embedded key-value database for caching
-- **[GoQuery](https://github.com/PuerkitoBio/goquery)**: jQuery-like HTML parsing
+- **[GoQuery](https://github.com/PuerkitoBio/goquery)**: HTML parsing and CSS selection
 - **[TOML](https://github.com/BurntSushi/toml)**: Configuration file parsing
-
-## Testing
-
-```bash
-# Run all tests
-go test ./...
-
-# Run tests with coverage
-go test -cover ./...
-
-# Run specific package tests
-go test ./internal/scraper
-```
-
-## Performance
-
-- **Concurrent Processing**: Handles hundreds of URLs simultaneously
-- **Memory Efficient**: Streaming processing with controlled memory usage
-- **Network Optimized**: Connection pooling and intelligent retry mechanisms
-- **Cache Performance**: Fast BBolt-based caching reduces redundant requests
 
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Development Setup
-
-```bash
-git clone https://github.com/JesterSe7en/scrapego.git
-cd scrapego
-go mod download
-go run . --help
-```
-
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ## Author
 
 **Alexander Chan** - [JesterSe7en](https://github.com/JesterSe7en)
-
----
-
-<div align="center">
-  <strong>⭐ If you found this project helpful, please consider giving it a star! ⭐</strong>
-</div>
