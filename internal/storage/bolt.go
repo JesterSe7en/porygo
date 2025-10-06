@@ -62,12 +62,7 @@ func getCachePath() (string, error) {
 	}
 }
 
-func NewBoltCache() (CacheStorage, error) {
-	pathDB, err := getCachePath()
-	if err != nil {
-		return nil, fmt.Errorf("cannot get cache location: %w", err)
-	}
-
+func newBoltCacheAt(pathDB string) (CacheStorage, error) {
 	// Ensure the directory exists before opening the database.
 	if err := os.MkdirAll(filepath.Dir(pathDB), 0o750); err != nil {
 		return nil, fmt.Errorf("failed to create cache directory: %w", err)
@@ -92,6 +87,14 @@ func NewBoltCache() (CacheStorage, error) {
 	}
 
 	return &boltCache{db: db}, nil
+}
+
+func NewBoltCache() (CacheStorage, error) {
+	pathDB, err := getCachePath()
+	if err != nil {
+		return nil, fmt.Errorf("cannot get cache location: %w", err)
+	}
+	return newBoltCacheAt(pathDB)
 }
 
 // Get retrieves a cache entry by key.
