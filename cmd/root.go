@@ -90,7 +90,7 @@ func init() {
 
 	// Define flags with default values
 	// log, debug, and verbose is not in the Defaults struct as that is used to init a config.toml file
-	// do not wnat those to be exposed in config.  user wil have to specifiy these flags explicity during the command call
+	// do not want those to be exposed in config.  user wil have to specify these flags explicitly during the command call
 	rootCmd.PersistentFlags().StringP(flags.FlagLog, "l", "", "file path to write logs")
 	rootCmd.PersistentFlags().BoolP(flags.FlagDebug, "d", false, "output debug messages")
 	rootCmd.PersistentFlags().BoolP(flags.FlagVerbose, "v", false, "show logs for each step")

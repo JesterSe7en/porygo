@@ -1,4 +1,4 @@
-// Pacakge storage contains the interface that is used to store and retrieve cache entries
+// Package storage contains the interface that is used to store and retrieve cache entries
 package storage
 
 import (

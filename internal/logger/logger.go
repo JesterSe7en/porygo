@@ -42,7 +42,7 @@ func New(filename string, debug bool, verbose bool) (Logger, error) {
 	var err error
 	l, err := cfg.Build()
 	if err != nil {
-		return Logger{}, fmt.Errorf("failed to initalize logger: %v", err)
+		return Logger{}, fmt.Errorf("failed to initialize logger: %v", err)
 	}
 
 	return Logger{
