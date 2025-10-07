@@ -57,7 +57,7 @@ func TestWorkerPool(t *testing.T) {
 		wg.Wait()
 	})
 
-	t.Run("Test context cancellation", func(t *testing.T) {
+	t.Run("Test Job Cancellation", func(t *testing.T) {
 		const numWorkers = 2
 		wp := New(numWorkers, 10)
 
@@ -100,7 +100,7 @@ func TestWorkerPool(t *testing.T) {
 		wp.Close()
 	})
 
-	t.Run("Test job error", func(t *testing.T) {
+	t.Run("Test Job Error", func(t *testing.T) {
 		const numWorkers = 2
 		wp := New(numWorkers, 10)
 		ctx := context.Background()
